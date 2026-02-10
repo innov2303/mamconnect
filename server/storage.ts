@@ -27,6 +27,7 @@ export interface IStorage {
   createParent(parent: InsertParent & { latitude?: string | null; longitude?: string | null }): Promise<Parent>;
   getAllParents(): Promise<Parent[]>;
   getParentById(id: string): Promise<Parent | undefined>;
+  updateParent(id: string, data: Partial<Parent>): Promise<Parent | undefined>;
 
   createNotification(notification: InsertParentNotification): Promise<ParentNotification>;
   getNotificationsByParentId(parentId: string): Promise<ParentNotification[]>;
@@ -146,6 +147,11 @@ export class DatabaseStorage implements IStorage {
 
   async getParentById(id: string): Promise<Parent | undefined> {
     const [parent] = await db.select().from(parents).where(eq(parents.id, id));
+    return parent;
+  }
+
+  async updateParent(id: string, data: Partial<Parent>): Promise<Parent | undefined> {
+    const [parent] = await db.update(parents).set(data).where(eq(parents.id, id)).returning();
     return parent;
   }
 

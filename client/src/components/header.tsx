@@ -2,20 +2,30 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useMamAuth } from "@/lib/mam-auth";
+import { useParentAuth } from "@/lib/parent-auth";
 import { Home, Search, UserPlus, LogIn, Menu, X, LogOut, LayoutDashboard, User, Baby } from "lucide-react";
 import { useState } from "react";
 
 export function Header() {
   const [location, navigate] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const auth = useMamAuth();
+  const mamAuth = useMamAuth();
+  const parentAuth = useParentAuth();
 
-  const navItems = auth.isLoggedIn
+  const isAnyLoggedIn = mamAuth.isLoggedIn || parentAuth.isLoggedIn;
+
+  const navItems = mamAuth.isLoggedIn
     ? [
         { href: "/", label: "Accueil", icon: Home },
         { href: "/annuaire", label: "Annuaire", icon: Search },
-        { href: `/mam/${auth.mam!.slug}`, label: "Mon profil", icon: User },
-        { href: `/dashboard/${auth.mam!.slug}`, label: "Tableau de bord", icon: LayoutDashboard },
+        { href: `/mam/${mamAuth.mam!.slug}`, label: "Mon profil", icon: User },
+        { href: `/dashboard/${mamAuth.mam!.slug}`, label: "Tableau de bord", icon: LayoutDashboard },
+      ]
+    : parentAuth.isLoggedIn
+    ? [
+        { href: "/", label: "Accueil", icon: Home },
+        { href: "/annuaire", label: "Annuaire", icon: Search },
+        { href: "/espace-parent", label: "Mon espace", icon: User },
       ]
     : [
         { href: "/", label: "Accueil", icon: Home },
@@ -26,7 +36,8 @@ export function Header() {
       ];
 
   const handleLogout = () => {
-    auth.logout();
+    if (mamAuth.isLoggedIn) mamAuth.logout();
+    if (parentAuth.isLoggedIn) parentAuth.logout();
     setMobileOpen(false);
     navigate("/");
   };
@@ -59,7 +70,7 @@ export function Header() {
               </Link>
             );
           })}
-          {auth.isLoggedIn && (
+          {isAnyLoggedIn && (
             <Button
               variant="ghost"
               className="gap-2"
@@ -104,7 +115,7 @@ export function Header() {
               </Link>
             );
           })}
-          {auth.isLoggedIn && (
+          {isAnyLoggedIn && (
             <Button
               variant="ghost"
               className="w-full justify-start gap-2"

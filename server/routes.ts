@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { registerMamSchema, loginMamSchema, loginAdminSchema, createTicketSchema, registerParentSchema } from "@shared/schema";
+import { registerMamSchema, loginMamSchema, loginAdminSchema, createTicketSchema, registerParentSchema, loginParentSchema } from "@shared/schema";
 import { fromError } from "zod-validation-error";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
@@ -30,6 +30,7 @@ const SALT_ROUNDS = 12;
 
 const adminTokens = new Map<string, { adminId: string; email: string; expiresAt: number }>();
 const mamTokens = new Map<string, { mamId: string; email: string; expiresAt: number }>();
+const parentTokens = new Map<string, { parentId: string; email: string; expiresAt: number }>();
 
 function generateToken(): string {
   return crypto.randomBytes(32).toString("hex");
@@ -64,6 +65,22 @@ function mamAuth(req: Request, res: Response, next: NextFunction) {
   }
   (req as any).mamId = session.mamId;
   (req as any).mamEmail = session.email;
+  next();
+}
+
+function parentAuth(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Authentification requise" });
+  }
+  const token = authHeader.slice(7);
+  const session = parentTokens.get(token);
+  if (!session || session.expiresAt < Date.now()) {
+    parentTokens.delete(token);
+    return res.status(401).json({ message: "Session expirée, veuillez vous reconnecter" });
+  }
+  (req as any).parentId = session.parentId;
+  (req as any).parentEmail = session.email;
   next();
 }
 
@@ -516,18 +533,106 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Un compte parent existe déjà avec cet email" });
       }
 
+      const hashedPassword = await bcrypt.hash(result.data.password, SALT_ROUNDS);
       const geo = await geocodeAddress(result.data.address, result.data.city, result.data.postalCode);
 
       const parent = await storage.createParent({
         ...result.data,
+        password: hashedPassword,
         latitude: geo?.latitude || null,
         longitude: geo?.longitude || null,
       });
 
-      res.status(201).json(parent);
+      const { password: _, ...parentWithoutPassword } = parent;
+      res.status(201).json(parentWithoutPassword);
     } catch (error) {
       console.error("Create parent error:", error);
       res.status(500).json({ message: "Erreur lors de l'inscription" });
+    }
+  });
+
+  app.post("/api/parents/login", async (req, res) => {
+    try {
+      const result = loginParentSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: fromError(result.error).message });
+      }
+
+      const parent = await storage.getParentByEmail(result.data.email);
+      if (!parent) {
+        return res.status(401).json({ message: "Email ou mot de passe incorrect" });
+      }
+
+      const validPassword = await bcrypt.compare(result.data.password, parent.password);
+      if (!validPassword) {
+        return res.status(401).json({ message: "Email ou mot de passe incorrect" });
+      }
+
+      const token = generateToken();
+      parentTokens.set(token, {
+        parentId: parent.id,
+        email: parent.email,
+        expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+      });
+
+      const { password: _, ...parentWithoutPassword } = parent;
+      res.json({ token, parent: parentWithoutPassword });
+    } catch (error) {
+      console.error("Parent login error:", error);
+      res.status(500).json({ message: "Erreur lors de la connexion" });
+    }
+  });
+
+  app.get("/api/parents/me", parentAuth, async (req, res) => {
+    try {
+      const parentId = (req as any).parentId;
+      const parent = await storage.getParentById(parentId);
+      if (!parent) {
+        return res.status(404).json({ message: "Parent introuvable" });
+      }
+      const { password: _, ...parentWithoutPassword } = parent;
+      res.json(parentWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors de la récupération du profil" });
+    }
+  });
+
+  app.patch("/api/parents/me", parentAuth, async (req, res) => {
+    try {
+      const parentId = (req as any).parentId;
+      const parent = await storage.getParentById(parentId);
+      if (!parent) {
+        return res.status(404).json({ message: "Parent introuvable" });
+      }
+
+      const updates: any = {};
+      const allowedFields = ["firstName", "lastName", "phone", "address", "city", "postalCode", "childBirthDate", "desiredStartDate", "notes", "notificationsEnabled", "searchActive"];
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          updates[field] = req.body[field];
+        }
+      }
+
+      if (updates.address || updates.city || updates.postalCode) {
+        const addr = updates.address || parent.address;
+        const city = updates.city || parent.city;
+        const pc = updates.postalCode || parent.postalCode;
+        const geo = await geocodeAddress(addr, city, pc);
+        if (geo) {
+          updates.latitude = geo.latitude;
+          updates.longitude = geo.longitude;
+        }
+      }
+
+      const updated = await storage.updateParent(parentId, updates);
+      if (!updated) {
+        return res.status(500).json({ message: "Erreur lors de la mise à jour" });
+      }
+      const { password: _, ...parentWithoutPassword } = updated;
+      res.json(parentWithoutPassword);
+    } catch (error) {
+      console.error("Update parent error:", error);
+      res.status(500).json({ message: "Erreur lors de la mise à jour du profil" });
     }
   });
 

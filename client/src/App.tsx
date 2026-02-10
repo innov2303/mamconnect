@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { MamAuthProvider } from "@/lib/mam-auth";
+import { ParentAuthProvider } from "@/lib/parent-auth";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import Home from "@/pages/home";
@@ -14,6 +15,7 @@ import MamProfile from "@/pages/mam-profile";
 import Register from "@/pages/register";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
+import ParentDashboard from "@/pages/parent-dashboard";
 import AdminLogin from "@/pages/admin-login";
 import AdminDashboard from "@/pages/admin-dashboard";
 import ParentRegister from "@/pages/parent-register";
@@ -29,6 +31,7 @@ function Router() {
       <Route path="/connexion" component={Login} />
       <Route path="/dashboard/:slug" component={Dashboard} />
       <Route path="/inscription-parent" component={ParentRegister} />
+      <Route path="/espace-parent" component={ParentDashboard} />
       <Route path="/admin" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route component={NotFound} />
@@ -74,12 +77,14 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <MamAuthProvider>
-        <ThemeProvider>
-          <TooltipProvider>
-            <AppLayout />
-            <Toaster />
-          </TooltipProvider>
-        </ThemeProvider>
+        <ParentAuthProvider>
+          <ThemeProvider>
+            <TooltipProvider>
+              <AppLayout />
+              <Toaster />
+            </TooltipProvider>
+          </ThemeProvider>
+        </ParentAuthProvider>
       </MamAuthProvider>
     </QueryClientProvider>
   );

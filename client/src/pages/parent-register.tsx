@@ -13,7 +13,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { registerParentSchema } from "@shared/schema";
-import { Baby, MapPin, Calendar, Mail, Phone, User, Heart, CheckCircle2 } from "lucide-react";
+import { Baby, MapPin, Calendar, Mail, Phone, User, Heart, CheckCircle2, Lock, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 import { useState } from "react";
 
@@ -23,6 +23,8 @@ export default function ParentRegister() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [submitted, setSubmitted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const form = useForm<ParentFormValues>({
     resolver: zodResolver(registerParentSchema),
@@ -31,6 +33,7 @@ export default function ParentRegister() {
       lastName: "",
       email: "",
       phone: "",
+      password: "",
       address: "",
       city: "",
       postalCode: "",
@@ -76,15 +79,15 @@ export default function ParentRegister() {
             </div>
             <h2 className="text-2xl font-bold mb-2" data-testid="text-success-title">Inscription confirmée</h2>
             <p className="text-muted-foreground mb-6" data-testid="text-success-message">
-              Votre inscription a bien été enregistrée. Vous recevrez une notification par email
-              dès qu'une place sera disponible dans une MAM à moins de 30 km de votre adresse.
+              Votre compte a bien été créé. Connectez-vous pour accéder à votre espace parent
+              et activer la recherche de places disponibles.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-              <Button onClick={() => navigate("/annuaire")} data-testid="button-browse-directory">
-                Parcourir l'annuaire
+              <Button onClick={() => navigate("/connexion")} data-testid="button-go-login">
+                Se connecter
               </Button>
-              <Button variant="outline" onClick={() => navigate("/")} data-testid="button-back-home">
-                Retour à l'accueil
+              <Button variant="outline" onClick={() => navigate("/annuaire")} data-testid="button-browse-directory">
+                Parcourir l'annuaire
               </Button>
             </div>
           </CardContent>
@@ -172,6 +175,40 @@ export default function ParentRegister() {
                     )}
                   />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mot de passe</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Mot de passe sécurisé"
+                            {...field}
+                            data-testid="input-password"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-0 top-0"
+                            onClick={() => setShowPassword(!showPassword)}
+                            data-testid="button-toggle-password"
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormDescription>
+                        Min. 8 caractères, 1 majuscule, 1 minuscule, 1 chiffre, 1 caractère spécial
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div className="space-y-4">

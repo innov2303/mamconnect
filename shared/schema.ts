@@ -156,6 +156,7 @@ export const parents = pgTable("parents", {
   lastName: text("last_name").notNull(),
   email: text("email").notNull().unique(),
   phone: text("phone").notNull(),
+  password: text("password").notNull(),
   address: text("address").notNull(),
   city: text("city").notNull(),
   postalCode: text("postal_code").notNull(),
@@ -164,6 +165,7 @@ export const parents = pgTable("parents", {
   childBirthDate: text("child_birth_date").notNull(),
   desiredStartDate: text("desired_start_date").notNull(),
   notes: text("notes").default(""),
+  searchActive: boolean("search_active").notNull().default(false),
   notificationsEnabled: boolean("notifications_enabled").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -180,6 +182,12 @@ export const registerParentSchema = z.object({
   lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
   email: z.string().email("Email invalide"),
   phone: z.string().min(10, "Numéro de téléphone invalide"),
+  password: z.string()
+    .min(8, "Le mot de passe doit contenir au moins 8 caractères")
+    .regex(/[A-Z]/, "Le mot de passe doit contenir au moins une majuscule")
+    .regex(/[a-z]/, "Le mot de passe doit contenir au moins une minuscule")
+    .regex(/[0-9]/, "Le mot de passe doit contenir au moins un chiffre")
+    .regex(/[^A-Za-z0-9]/, "Le mot de passe doit contenir au moins un caractère spécial (!@#$...)"),
   address: z.string().min(5, "Adresse requise"),
   city: z.string().min(2, "Ville requise"),
   postalCode: z.string().regex(/^\d{5}$/, "Code postal invalide (5 chiffres)"),
@@ -187,6 +195,11 @@ export const registerParentSchema = z.object({
   desiredStartDate: z.string().min(1, "Date souhaitée requise"),
   notes: z.string().default(""),
   notificationsEnabled: z.boolean().default(true),
+});
+
+export const loginParentSchema = z.object({
+  email: z.string().email("Email invalide"),
+  password: z.string().min(1, "Mot de passe requis"),
 });
 
 export type InsertParent = z.infer<typeof insertParentSchema>;

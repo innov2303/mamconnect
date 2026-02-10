@@ -4,6 +4,8 @@
 Mam Connect is a platform connecting parents with MAM (Maisons d'Assistantes Maternelles) in France. MAMs can register, create personalized profile pages, and manage their information. Parents can search the directory by city/postal code and view detailed MAM profiles. An admin system manages MAM validation, user management, and support tickets.
 
 ## Recent Changes
+- 2026-02-10: Added unified login page with MAM/Parent tabs, parent auth context, parent dashboard with profile editing and search activation toggle
+- 2026-02-10: Added password-protected parent accounts (bcrypt hashing, complexity validation) with token-based authentication
 - 2026-02-10: Added parent registration system with geocoding (api-adresse.data.gouv.fr) and automatic 30km radius notification matching
 - 2026-02-10: Added email notifications via Resend when MAM spots become available near registered parents
 - 2026-02-10: Added available spots management (availableSpots JSONB) - MAMs can add spots with date, count, note; displayed on profile page
@@ -38,9 +40,11 @@ Mam Connect is a platform connecting parents with MAM (Maisons d'Assistantes Mat
 - `client/src/pages/directory.tsx` - MAM directory with search/filter
 - `client/src/pages/mam-profile.tsx` - Individual MAM profile page (shows edit buttons for owner)
 - `client/src/pages/register.tsx` - MAM registration form
-- `client/src/pages/login.tsx` - MAM login page (redirects to profile page)
+- `client/src/pages/login.tsx` - Unified login page with MAM/Parent tabs
 - `client/src/pages/dashboard.tsx` - MAM management dashboard (token auth, no password needed)
-- `client/src/pages/parent-register.tsx` - Parent registration form (basic info + search criteria)
+- `client/src/pages/parent-register.tsx` - Parent registration form (with password)
+- `client/src/pages/parent-dashboard.tsx` - Parent dashboard (profile editing, search activation, notifications)
+- `client/src/lib/parent-auth.tsx` - Parent authentication context (token + localStorage session)
 - `client/src/pages/admin-login.tsx` - Admin login page
 - `client/src/pages/admin-dashboard.tsx` - Admin dashboard (MAM management + tickets)
 
@@ -58,7 +62,10 @@ Mam Connect is a platform connecting parents with MAM (Maisons d'Assistantes Mat
 - `GET /api/mams/:id/tickets` - List MAM's tickets
 
 ### Parent
-- `POST /api/parents` - Register parent (geocodes address, returns parent data with lat/lng)
+- `POST /api/parents` - Register parent (password hashed, geocodes address)
+- `POST /api/parents/login` - Parent login (returns token + parent data)
+- `GET /api/parents/me` - Get authenticated parent data (requires Bearer token)
+- `PATCH /api/parents/me` - Update parent profile + searchActive toggle (requires Bearer token)
 - `GET /api/parents/:id/notifications` - List parent's notifications
 
 ### Admin (requires Bearer token)
