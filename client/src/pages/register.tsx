@@ -69,10 +69,10 @@ export default function Register() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/mams"] });
       toast({
-        title: "MAM inscrite avec succès !",
-        description: "Votre page est maintenant visible dans l'annuaire.",
+        title: "Inscription envoyée !",
+        description: "Votre inscription est en attente de validation par un administrateur. Vous serez visible dans l'annuaire une fois approuvée.",
       });
-      navigate(`/mam/${data.slug}`);
+      navigate(`/dashboard/${data.slug}`);
     },
     onError: (error: Error) => {
       toast({

@@ -18,9 +18,10 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
-  Eye, Save, X, Plus, Trash2, UserPlus, Image, Settings, Users, Lock, Check
+  Eye, Save, X, Plus, Trash2, UserPlus, Image, Settings, Users, Lock, Check,
+  MessageSquare, Send, AlertCircle, Clock
 } from "lucide-react";
-import type { Mam, StaffMember } from "@shared/schema";
+import type { Mam, StaffMember, Ticket } from "@shared/schema";
 import { z } from "zod";
 import { useState, useEffect } from "react";
 
@@ -195,6 +196,149 @@ function PhotoManager({
   );
 }
 
+const TICKET_STATUS_LABELS: Record<string, string> = {
+  open: "Ouvert",
+  in_progress: "En cours",
+  closed: "Fermé",
+};
+
+function TicketPanel({ mamId }: { mamId: string }) {
+  const { toast } = useToast();
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [priority, setPriority] = useState("normal");
+
+  const { data: ticketsList = [], isLoading } = useQuery<Ticket[]>({
+    queryKey: ["/api/mams", mamId, "tickets"],
+    queryFn: async () => {
+      const res = await fetch(`/api/mams/${mamId}/tickets`);
+      if (!res.ok) throw new Error("Erreur");
+      return res.json();
+    },
+  });
+
+  const createTicketMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/mams/${mamId}/tickets`, {
+        subject, message, priority,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mams", mamId, "tickets"] });
+      setSubject("");
+      setMessage("");
+      setPriority("normal");
+      toast({
+        title: "Ticket créé",
+        description: "Votre demande de support a été envoyée.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    },
+  });
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          <h2 className="text-lg font-semibold">Créer un ticket de support</h2>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Sujet</label>
+            <Input
+              placeholder="Ex: Problème de connexion, question sur mon profil..."
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              data-testid="input-ticket-subject"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Priorité</label>
+            <Select value={priority} onValueChange={setPriority}>
+              <SelectTrigger data-testid="select-ticket-priority">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">Basse</SelectItem>
+                <SelectItem value="normal">Normale</SelectItem>
+                <SelectItem value="high">Haute</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Message</label>
+            <Textarea
+              placeholder="Décrivez votre problème ou votre question en détail..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="min-h-[100px] resize-none"
+              data-testid="input-ticket-message"
+            />
+          </div>
+          <Button
+            className="gap-2"
+            onClick={() => createTicketMutation.mutate()}
+            disabled={!subject.trim() || !message.trim() || message.length < 10 || createTicketMutation.isPending}
+            data-testid="button-create-ticket"
+          >
+            <Send className="h-4 w-4" />
+            {createTicketMutation.isPending ? "Envoi..." : "Envoyer le ticket"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <h2 className="text-lg font-semibold">Mes tickets</h2>
+      {isLoading ? (
+        <Skeleton className="h-32 w-full" />
+      ) : ticketsList.length === 0 ? (
+        <Card>
+          <CardContent className="p-6 text-center">
+            <MessageSquare className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+            <p className="text-muted-foreground text-sm">Aucun ticket pour le moment</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {ticketsList.map((ticket) => (
+            <Card key={ticket.id} data-testid={`card-my-ticket-${ticket.id}`}>
+              <CardContent className="p-4">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <h3 className="font-semibold text-sm">{ticket.subject}</h3>
+                  <Badge
+                    variant={
+                      ticket.status === "open" ? "secondary" :
+                      ticket.status === "in_progress" ? "default" :
+                      "outline"
+                    }
+                  >
+                    {TICKET_STATUS_LABELS[ticket.status] || ticket.status}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  {new Date(ticket.createdAt).toLocaleDateString("fr-FR", {
+                    day: "numeric", month: "long", year: "numeric",
+                  })}
+                </p>
+                <p className="text-sm">{ticket.message}</p>
+                {ticket.adminResponse && (
+                  <div className="mt-3 p-3 rounded-md bg-muted">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                      <MessageSquare className="h-3 w-3 inline mr-1" />
+                      Réponse de l'équipe :
+                    </p>
+                    <p className="text-sm">{ticket.adminResponse}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
@@ -348,6 +492,34 @@ export default function Dashboard() {
           </Link>
         </div>
 
+        {mam.status === "pending" && (
+          <Card className="mb-4">
+            <CardContent className="p-4 flex items-start gap-3">
+              <Clock className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-sm">Inscription en attente de validation</p>
+                <p className="text-xs text-muted-foreground">
+                  Votre MAM sera visible dans l'annuaire une fois approuvée par l'administrateur.
+                  Vous pouvez compléter votre profil en attendant.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        {mam.status === "rejected" && (
+          <Card className="mb-4">
+            <CardContent className="p-4 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-sm">Inscription refusée</p>
+                <p className="text-xs text-muted-foreground">
+                  Votre MAM n'a pas été approuvée. Contactez le support via l'onglet Support pour plus d'informations.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Tabs defaultValue="info">
           <TabsList className="mb-4">
             <TabsTrigger value="info" className="gap-2" data-testid="tab-info">
@@ -365,6 +537,10 @@ export default function Dashboard() {
             <TabsTrigger value="security" className="gap-2" data-testid="tab-security">
               <Lock className="h-4 w-4" />
               Sécurité
+            </TabsTrigger>
+            <TabsTrigger value="support" className="gap-2" data-testid="tab-support">
+              <MessageSquare className="h-4 w-4" />
+              Support
             </TabsTrigger>
           </TabsList>
 
@@ -672,6 +848,10 @@ export default function Dashboard() {
               </Card>
             </form>
           </Form>
+
+          <TabsContent value="support">
+            {mam && <TicketPanel mamId={mam.id} />}
+          </TabsContent>
         </Tabs>
       </div>
     </div>

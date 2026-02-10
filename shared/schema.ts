@@ -30,7 +30,8 @@ export const mams = pgTable("mams", {
   photos: text("photos").array().notNull().default(sql`'{}'::text[]`),
   staffMembers: jsonb("staff_members").notNull().default(sql`'[]'::jsonb`),
   coverPhoto: text("cover_photo"),
-  published: boolean("published").notNull().default(true),
+  published: boolean("published").notNull().default(false),
+  status: text("status").notNull().default("pending"),
   password: text("password").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -69,6 +70,58 @@ export const loginMamSchema = z.object({
 
 export type InsertMam = z.infer<typeof insertMamSchema>;
 export type Mam = typeof mams.$inferSelect;
+
+export const admins = pgTable("admins", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertAdminSchema = createInsertSchema(admins).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const loginAdminSchema = z.object({
+  email: z.string().email("Email invalide"),
+  password: z.string().min(1, "Mot de passe requis"),
+});
+
+export type InsertAdmin = z.infer<typeof insertAdminSchema>;
+export type Admin = typeof admins.$inferSelect;
+
+export const tickets = pgTable("tickets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  mamId: varchar("mam_id").references(() => mams.id),
+  senderName: text("sender_name").notNull(),
+  senderEmail: text("sender_email").notNull(),
+  subject: text("subject").notNull(),
+  message: text("message").notNull(),
+  status: text("status").notNull().default("open"),
+  priority: text("priority").notNull().default("normal"),
+  adminResponse: text("admin_response"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertTicketSchema = createInsertSchema(tickets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  adminResponse: true,
+  status: true,
+});
+
+export const createTicketSchema = z.object({
+  subject: z.string().min(3, "Le sujet doit contenir au moins 3 caractères"),
+  message: z.string().min(10, "Le message doit contenir au moins 10 caractères"),
+  priority: z.enum(["low", "normal", "high"]).default("normal"),
+});
+
+export type InsertTicket = z.infer<typeof insertTicketSchema>;
+export type Ticket = typeof tickets.$inferSelect;
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

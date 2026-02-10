@@ -1,11 +1,34 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { registerMamSchema, loginMamSchema } from "@shared/schema";
+import { registerMamSchema, loginMamSchema, loginAdminSchema, createTicketSchema } from "@shared/schema";
 import { fromError } from "zod-validation-error";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 
 const SALT_ROUNDS = 12;
+
+const adminTokens = new Map<string, { adminId: string; email: string; expiresAt: number }>();
+
+function generateToken(): string {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+function adminAuth(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Authentification requise" });
+  }
+  const token = authHeader.slice(7);
+  const session = adminTokens.get(token);
+  if (!session || session.expiresAt < Date.now()) {
+    adminTokens.delete(token);
+    return res.status(401).json({ message: "Session expirée, veuillez vous reconnecter" });
+  }
+  (req as any).adminId = session.adminId;
+  (req as any).adminEmail = session.email;
+  next();
+}
 
 function slugify(text: string): string {
   return text
@@ -20,6 +43,7 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
   app.get("/api/mams", async (_req, res) => {
     try {
       const allMams = await storage.getMams();
@@ -80,7 +104,8 @@ export async function registerRoutes(
         photos: [],
         staffMembers: [],
         coverPhoto: null,
-        published: true,
+        published: false,
+        status: "pending",
       };
 
       const mam = await storage.createMam(mamData);
@@ -139,7 +164,7 @@ export async function registerRoutes(
       const allowedFields = [
         "name", "email", "phone", "description", "address", "city",
         "postalCode", "capacity", "ageMin", "ageMax", "openingHours",
-        "services", "photos", "staffMembers", "coverPhoto", "published",
+        "services", "photos", "staffMembers", "coverPhoto",
       ];
 
       for (const field of allowedFields) {
@@ -166,6 +191,175 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Update MAM error:", error);
       res.status(500).json({ message: "Erreur lors de la mise à jour" });
+    }
+  });
+
+  app.post("/api/mams/:id/tickets", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const mam = await storage.getMamById(id);
+      if (!mam) {
+        return res.status(404).json({ message: "MAM introuvable" });
+      }
+
+      const result = createTicketSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: fromError(result.error).message });
+      }
+
+      const ticket = await storage.createTicket({
+        mamId: id,
+        senderName: mam.name,
+        senderEmail: mam.email,
+        subject: result.data.subject,
+        message: result.data.message,
+        priority: result.data.priority,
+      });
+
+      res.status(201).json(ticket);
+    } catch (error) {
+      console.error("Create ticket error:", error);
+      res.status(500).json({ message: "Erreur lors de la création du ticket" });
+    }
+  });
+
+  app.get("/api/mams/:id/tickets", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const ticketsList = await storage.getTicketsByMamId(id);
+      res.json(ticketsList);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors de la récupération des tickets" });
+    }
+  });
+
+  app.post("/api/admin/login", async (req, res) => {
+    try {
+      const result = loginAdminSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: fromError(result.error).message });
+      }
+
+      const admin = await storage.getAdminByEmail(result.data.email);
+      if (!admin) {
+        return res.status(401).json({ message: "Identifiants incorrects" });
+      }
+
+      const passwordMatch = await bcrypt.compare(result.data.password, admin.password);
+      if (!passwordMatch) {
+        return res.status(401).json({ message: "Identifiants incorrects" });
+      }
+
+      const token = generateToken();
+      adminTokens.set(token, {
+        adminId: admin.id,
+        email: admin.email,
+        expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+      });
+
+      const { password, ...safeAdmin } = admin;
+      res.json({ ...safeAdmin, token });
+    } catch (error) {
+      res.status(500).json({ message: "Erreur de connexion" });
+    }
+  });
+
+  app.get("/api/admin/verify", adminAuth, async (_req, res) => {
+    res.json({ authenticated: true });
+  });
+
+  app.get("/api/admin/mams", adminAuth, async (_req, res) => {
+    try {
+      const allMams = await storage.getAllMams();
+      const safeMams = allMams.map(({ password, ...rest }) => rest);
+      res.json(safeMams);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors de la récupération des MAM" });
+    }
+  });
+
+  app.patch("/api/admin/mams/:id/status", adminAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      if (!["pending", "approved", "rejected"].includes(status)) {
+        return res.status(400).json({ message: "Statut invalide" });
+      }
+
+      const published = status === "approved";
+      const updatedMam = await storage.updateMam(id, { status, published } as any);
+      if (!updatedMam) {
+        return res.status(404).json({ message: "MAM introuvable" });
+      }
+
+      const { password, ...safeMam } = updatedMam;
+      res.json(safeMam);
+    } catch (error) {
+      console.error("Update MAM status error:", error);
+      res.status(500).json({ message: "Erreur lors de la mise à jour du statut" });
+    }
+  });
+
+  app.delete("/api/admin/mams/:id", adminAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteMam(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "MAM introuvable" });
+      }
+      res.json({ message: "MAM supprimée avec succès" });
+    } catch (error) {
+      console.error("Delete MAM error:", error);
+      res.status(500).json({ message: "Erreur lors de la suppression" });
+    }
+  });
+
+  app.get("/api/admin/tickets", adminAuth, async (_req, res) => {
+    try {
+      const allTickets = await storage.getTickets();
+      res.json(allTickets);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors de la récupération des tickets" });
+    }
+  });
+
+  app.patch("/api/admin/tickets/:id", adminAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, adminResponse } = req.body;
+
+      const updateData: Record<string, unknown> = {};
+      if (status && ["open", "in_progress", "closed"].includes(status)) {
+        updateData.status = status;
+      }
+      if (adminResponse !== undefined) {
+        updateData.adminResponse = adminResponse;
+      }
+
+      const updatedTicket = await storage.updateTicket(id, updateData as any);
+      if (!updatedTicket) {
+        return res.status(404).json({ message: "Ticket introuvable" });
+      }
+
+      res.json(updatedTicket);
+    } catch (error) {
+      console.error("Update ticket error:", error);
+      res.status(500).json({ message: "Erreur lors de la mise à jour du ticket" });
+    }
+  });
+
+  app.delete("/api/admin/tickets/:id", adminAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const ticket = await storage.getTicketById(id);
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket introuvable" });
+      }
+      await storage.updateTicket(id, { status: "closed" } as any);
+      res.json({ message: "Ticket fermé avec succès" });
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors de la fermeture du ticket" });
     }
   });
 
