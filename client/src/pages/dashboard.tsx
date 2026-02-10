@@ -21,7 +21,8 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   Eye, Save, X, Plus, Trash2, UserPlus, Image, Settings, Users, Lock, Check,
-  MessageSquare, Send, AlertCircle, Clock, Upload, Camera, CalendarPlus, Calendar
+  MessageSquare, Send, AlertCircle, Clock, Upload, Camera, CalendarPlus, Calendar,
+  Link2, Copy
 } from "lucide-react";
 import type { Mam, StaffMember, AvailableSpot, Ticket } from "@shared/schema";
 import { z } from "zod";
@@ -804,6 +805,35 @@ export default function Dashboard() {
             </Button>
           </Link>
         </div>
+
+        {mam.status === "approved" && (
+          <Card className="mb-4">
+            <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-start gap-3 min-w-0">
+                <Link2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="font-medium text-sm">Lien de votre page MAM</p>
+                  <p className="text-xs text-muted-foreground truncate" data-testid="text-shareable-link">
+                    {window.location.origin}/mam/{mam.slug}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                data-testid="button-copy-link"
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/mam/${mam.slug}`);
+                  toast({ title: "Lien copié", description: "Le lien de votre page a été copié dans le presse-papiers." });
+                }}
+              >
+                <Copy className="h-3.5 w-3.5" />
+                Copier le lien
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {mam.status === "pending" && (
           <Card className="mb-4">
