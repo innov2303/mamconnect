@@ -124,7 +124,7 @@ function StaffEditor({
   onChange: (staff: StaffMember[]) => void;
 }) {
   const [newName, setNewName] = useState("");
-  const [newRole, setNewRole] = useState("");
+  const [newRole, setNewRole] = useState("Assistante maternelle");
   const [newDesc, setNewDesc] = useState("");
 
   const addMember = () => {
@@ -134,7 +134,7 @@ function StaffEditor({
       { name: newName.trim(), role: newRole.trim(), description: newDesc.trim() || undefined },
     ]);
     setNewName("");
-    setNewRole("");
+    setNewRole("Assistante maternelle");
     setNewDesc("");
   };
 
