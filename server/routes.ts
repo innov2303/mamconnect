@@ -8,6 +8,7 @@ import crypto from "crypto";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import sharp from "sharp";
 
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -15,14 +16,8 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 const upload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, uploadDir),
-    filename: (_req, file, cb) => {
-      const ext = path.extname(file.originalname);
-      cb(null, `${crypto.randomBytes(16).toString("hex")}${ext}`);
-    },
-  }),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowed = [".jpg", ".jpeg", ".png", ".webp"];
     const ext = path.extname(file.originalname).toLowerCase();
@@ -70,12 +65,24 @@ export async function registerRoutes(
 
   app.use("/uploads", (await import("express")).default.static(uploadDir));
 
-  app.post("/api/upload", upload.single("photo"), (req: Request, res: Response) => {
+  app.post("/api/upload", upload.single("photo"), async (req: Request, res: Response) => {
     if (!req.file) {
       return res.status(400).json({ message: "Aucun fichier envoyé ou format non supporté (jpg, png, webp)" });
     }
-    const url = `/uploads/${req.file.filename}`;
-    res.json({ url });
+    try {
+      const filename = `${crypto.randomBytes(16).toString("hex")}.webp`;
+      const outputPath = path.join(uploadDir, filename);
+
+      await sharp(req.file.buffer)
+        .resize(1920, 1080, { fit: "inside", withoutEnlargement: true })
+        .sharpen()
+        .webp({ quality: 85 })
+        .toFile(outputPath);
+
+      res.json({ url: `/uploads/${filename}` });
+    } catch (error: any) {
+      res.status(500).json({ message: "Erreur lors du traitement de l'image" });
+    }
   });
 
   app.get("/api/mams", async (_req, res) => {

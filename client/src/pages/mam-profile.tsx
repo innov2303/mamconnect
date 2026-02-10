@@ -23,6 +23,9 @@ function PhotoGallery({ photos, name }: { photos: string[]; name: string }) {
           src={photos[activeIndex]}
           alt={`${name} - Photo ${activeIndex + 1}`}
           className="w-full h-full object-cover"
+          style={{ imageRendering: "auto" }}
+          loading="eager"
+          decoding="async"
           data-testid="img-gallery-main"
         />
         {photos.length > 1 && (
@@ -62,7 +65,8 @@ function PhotoGallery({ photos, name }: { photos: string[]; name: string }) {
               <img
                 src={photo}
                 alt={`${name} - Miniature ${i + 1}`}
-                className="w-16 h-16 object-cover"
+                className="w-20 h-20 object-cover"
+                loading="lazy"
               />
             </button>
           ))}
