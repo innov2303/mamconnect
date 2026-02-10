@@ -35,10 +35,8 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 pt-4 border-t flex items-center justify-center gap-1 text-sm text-muted-foreground">
-          <span>Fait avec</span>
-          <Heart className="h-3.5 w-3.5 text-destructive" />
-          <span>pour les familles</span>
+        <div className="mt-8 pt-4 border-t flex items-center justify-center text-sm text-muted-foreground">
+          <span>&copy; 2026 <a href="https://innov-studio.fr" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors underline" data-testid="link-innov-studio">Innov Studio</a>. Tous droits réservés.</span>
         </div>
       </div>
     </footer>
