@@ -21,7 +21,7 @@ export function Header() {
         { href: "/", label: "Accueil", icon: Home },
         { href: "/annuaire", label: "Annuaire", icon: Search },
         { href: "/inscription-parent", label: "Inscription parent", icon: Baby },
-        { href: "/inscription", label: "Inscrire ma MAM", icon: UserPlus },
+        { href: "/inscription", label: "Inscription MAM", icon: UserPlus },
         { href: "/connexion", label: "Connexion", icon: LogIn },
       ];
 
