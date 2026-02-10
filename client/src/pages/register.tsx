@@ -16,7 +16,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { registerMamSchema } from "@shared/schema";
-import { UserPlus, X, Plus } from "lucide-react";
+import { UserPlus, X, Plus, Check } from "lucide-react";
 import { z } from "zod";
 import { useState } from "react";
 
@@ -167,8 +167,33 @@ export default function Register() {
                             Ce mot de passe vous permettra de modifier votre page ultérieurement.
                           </FormDescription>
                           <FormControl>
-                            <Input type="password" placeholder="6 caractères minimum" {...field} data-testid="input-password" />
+                            <Input type="password" placeholder="8 caractères minimum" {...field} data-testid="input-password" />
                           </FormControl>
+                          {field.value && (
+                            <div className="text-xs space-y-1 p-3 rounded-md bg-muted mt-2">
+                              <p className="font-medium mb-1">Exigences du mot de passe :</p>
+                              <p className={field.value.length >= 8 ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}>
+                                <Check className={`h-3 w-3 inline mr-1 ${field.value.length >= 8 ? "" : "opacity-30"}`} />
+                                Au moins 8 caractères
+                              </p>
+                              <p className={/[A-Z]/.test(field.value) ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}>
+                                <Check className={`h-3 w-3 inline mr-1 ${/[A-Z]/.test(field.value) ? "" : "opacity-30"}`} />
+                                Au moins une majuscule
+                              </p>
+                              <p className={/[a-z]/.test(field.value) ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}>
+                                <Check className={`h-3 w-3 inline mr-1 ${/[a-z]/.test(field.value) ? "" : "opacity-30"}`} />
+                                Au moins une minuscule
+                              </p>
+                              <p className={/[0-9]/.test(field.value) ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}>
+                                <Check className={`h-3 w-3 inline mr-1 ${/[0-9]/.test(field.value) ? "" : "opacity-30"}`} />
+                                Au moins un chiffre
+                              </p>
+                              <p className={/[^A-Za-z0-9]/.test(field.value) ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}>
+                                <Check className={`h-3 w-3 inline mr-1 ${/[^A-Za-z0-9]/.test(field.value) ? "" : "opacity-30"}`} />
+                                Au moins un caractère spécial (!@#$...)
+                              </p>
+                            </div>
+                          )}
                           <FormMessage />
                         </FormItem>
                       )}

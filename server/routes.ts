@@ -3,6 +3,9 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { registerMamSchema, loginMamSchema } from "@shared/schema";
 import { fromError } from "zod-validation-error";
+import bcrypt from "bcrypt";
+
+const SALT_ROUNDS = 12;
 
 function slugify(text: string): string {
   return text
@@ -23,7 +26,7 @@ export async function registerRoutes(
       const safeMams = allMams.map(({ password, ...rest }) => rest);
       res.json(safeMams);
     } catch (error) {
-      res.status(500).json({ message: "Erreur lors de la r\u00e9cup\u00e9ration des MAM" });
+      res.status(500).json({ message: "Erreur lors de la récupération des MAM" });
     }
   });
 
@@ -33,7 +36,7 @@ export async function registerRoutes(
       const safeMams = allMams.map(({ password, ...rest }) => rest).slice(0, 6);
       res.json(safeMams);
     } catch (error) {
-      res.status(500).json({ message: "Erreur lors de la r\u00e9cup\u00e9ration des MAM" });
+      res.status(500).json({ message: "Erreur lors de la récupération des MAM" });
     }
   });
 
@@ -59,7 +62,7 @@ export async function registerRoutes(
 
       const existingMam = await storage.getMamByEmail(result.data.email);
       if (existingMam) {
-        return res.status(400).json({ message: "Un compte existe d\u00e9j\u00e0 avec cet email" });
+        return res.status(400).json({ message: "Un compte existe déjà avec cet email" });
       }
 
       let slug = slugify(result.data.name);
@@ -68,8 +71,11 @@ export async function registerRoutes(
         slug = `${slug}-${Date.now().toString(36)}`;
       }
 
+      const hashedPassword = await bcrypt.hash(result.data.password, SALT_ROUNDS);
+
       const mamData = {
         ...result.data,
+        password: hashedPassword,
         slug,
         photos: [],
         staffMembers: [],
@@ -98,7 +104,8 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Email ou mot de passe incorrect" });
       }
 
-      if (mam.password !== result.data.password) {
+      const passwordMatch = await bcrypt.compare(result.data.password, mam.password);
+      if (!passwordMatch) {
         return res.status(401).json({ message: "Email ou mot de passe incorrect" });
       }
 
@@ -117,6 +124,16 @@ export async function registerRoutes(
         return res.status(404).json({ message: "MAM introuvable" });
       }
 
+      const { currentPassword } = req.body;
+      if (!currentPassword) {
+        return res.status(401).json({ message: "Mot de passe requis pour modifier votre page" });
+      }
+
+      const passwordMatch = await bcrypt.compare(currentPassword, mam.password);
+      if (!passwordMatch) {
+        return res.status(401).json({ message: "Mot de passe incorrect" });
+      }
+
       const updateData: Record<string, unknown> = {};
 
       const allowedFields = [
@@ -127,24 +144,28 @@ export async function registerRoutes(
 
       for (const field of allowedFields) {
         if (req.body[field] !== undefined) {
-          if (field === "staffMembers") {
-            updateData[field] = req.body[field];
-          } else {
-            updateData[field] = req.body[field];
-          }
+          updateData[field] = req.body[field];
         }
+      }
+
+      if (req.body.newPassword) {
+        const newPwResult = registerMamSchema.shape.password.safeParse(req.body.newPassword);
+        if (!newPwResult.success) {
+          return res.status(400).json({ message: fromError(newPwResult.error).message });
+        }
+        updateData.password = await bcrypt.hash(req.body.newPassword, SALT_ROUNDS);
       }
 
       const updatedMam = await storage.updateMam(id, updateData);
       if (!updatedMam) {
-        return res.status(500).json({ message: "Erreur lors de la mise \u00e0 jour" });
+        return res.status(500).json({ message: "Erreur lors de la mise à jour" });
       }
 
       const { password, ...safeMam } = updatedMam;
       res.json(safeMam);
     } catch (error) {
       console.error("Update MAM error:", error);
-      res.status(500).json({ message: "Erreur lors de la mise \u00e0 jour" });
+      res.status(500).json({ message: "Erreur lors de la mise à jour" });
     }
   });
 

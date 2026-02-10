@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { mams } from "@shared/schema";
 import { log } from "./index";
+import bcrypt from "bcrypt";
 
 export async function seedDatabase() {
   const existing = await db.select().from(mams);
@@ -133,8 +134,10 @@ export async function seedDatabase() {
     },
   ];
 
+  const hashedPassword = await bcrypt.hash("Demo@12345", 12);
+
   for (const mamData of seedMams) {
-    await db.insert(mams).values(mamData);
+    await db.insert(mams).values({ ...mamData, password: hashedPassword });
   }
 
   log("Seed data inserted successfully");

@@ -18,7 +18,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
-  Eye, Save, X, Plus, Trash2, UserPlus, Image, Settings, Users
+  Eye, Save, X, Plus, Trash2, UserPlus, Image, Settings, Users, Lock, Check
 } from "lucide-react";
 import type { Mam, StaffMember } from "@shared/schema";
 import { z } from "zod";
@@ -220,6 +220,8 @@ export default function Dashboard() {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
   const form = useForm<EditFormValues>({
     resolver: zodResolver(editMamSchema),
@@ -263,16 +265,26 @@ export default function Dashboard() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: EditFormValues) => {
-      const res = await apiRequest("PATCH", `/api/mams/${mam!.id}`, {
+      if (!currentPassword) {
+        throw new Error("Veuillez saisir votre mot de passe actuel pour enregistrer les modifications.");
+      }
+      const payload: Record<string, unknown> = {
         ...data,
         services: selectedServices,
         staffMembers,
         photos,
-      });
+        currentPassword,
+      };
+      if (newPassword) {
+        payload.newPassword = newPassword;
+      }
+      const res = await apiRequest("PATCH", `/api/mams/${mam!.id}`, payload);
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mams"] });
+      setCurrentPassword("");
+      setNewPassword("");
       toast({
         title: "Modifications enregistrées",
         description: "Votre page a été mise à jour.",
@@ -349,6 +361,10 @@ export default function Dashboard() {
             <TabsTrigger value="photos" className="gap-2" data-testid="tab-photos">
               <Image className="h-4 w-4" />
               Photos
+            </TabsTrigger>
+            <TabsTrigger value="security" className="gap-2" data-testid="tab-security">
+              <Lock className="h-4 w-4" />
+              Sécurité
             </TabsTrigger>
           </TabsList>
 
@@ -574,23 +590,86 @@ export default function Dashboard() {
                 </Card>
               </TabsContent>
 
-              <div className="mt-4">
-                <Button
-                  type="submit"
-                  className="w-full gap-2"
-                  disabled={updateMutation.isPending}
-                  data-testid="button-save-changes"
-                >
-                  {updateMutation.isPending ? (
-                    "Enregistrement..."
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4" />
-                      Enregistrer les modifications
-                    </>
-                  )}
-                </Button>
-              </div>
+              <TabsContent value="security">
+                <Card>
+                  <CardContent className="p-6 space-y-4">
+                    <h2 className="text-lg font-semibold mb-4">Changer le mot de passe</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Laissez le champ "Nouveau mot de passe" vide si vous ne souhaitez pas le modifier.
+                    </p>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-sm font-medium mb-1.5 block">Nouveau mot de passe</label>
+                        <Input
+                          type="password"
+                          placeholder="Laisser vide pour ne pas changer"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          data-testid="input-new-password"
+                        />
+                      </div>
+                      {newPassword && (
+                        <div className="text-xs space-y-1 p-3 rounded-md bg-muted">
+                          <p className="font-medium mb-1">Exigences du mot de passe :</p>
+                          <p className={newPassword.length >= 8 ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}>
+                            <Check className={`h-3 w-3 inline mr-1 ${newPassword.length >= 8 ? "" : "opacity-30"}`} />
+                            Au moins 8 caractères
+                          </p>
+                          <p className={/[A-Z]/.test(newPassword) ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}>
+                            <Check className={`h-3 w-3 inline mr-1 ${/[A-Z]/.test(newPassword) ? "" : "opacity-30"}`} />
+                            Au moins une majuscule
+                          </p>
+                          <p className={/[a-z]/.test(newPassword) ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}>
+                            <Check className={`h-3 w-3 inline mr-1 ${/[a-z]/.test(newPassword) ? "" : "opacity-30"}`} />
+                            Au moins une minuscule
+                          </p>
+                          <p className={/[0-9]/.test(newPassword) ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}>
+                            <Check className={`h-3 w-3 inline mr-1 ${/[0-9]/.test(newPassword) ? "" : "opacity-30"}`} />
+                            Au moins un chiffre
+                          </p>
+                          <p className={/[^A-Za-z0-9]/.test(newPassword) ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}>
+                            <Check className={`h-3 w-3 inline mr-1 ${/[^A-Za-z0-9]/.test(newPassword) ? "" : "opacity-30"}`} />
+                            Au moins un caractère spécial (!@#$...)
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <Card className="mt-4">
+                <CardContent className="p-4 space-y-3">
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block">
+                      <Lock className="h-3.5 w-3.5 inline mr-1" />
+                      Mot de passe actuel (requis pour enregistrer)
+                    </label>
+                    <Input
+                      type="password"
+                      placeholder="Saisissez votre mot de passe pour confirmer"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      data-testid="input-current-password"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full gap-2"
+                    disabled={updateMutation.isPending || !currentPassword}
+                    data-testid="button-save-changes"
+                  >
+                    {updateMutation.isPending ? (
+                      "Enregistrement..."
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4" />
+                        Enregistrer les modifications
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
             </form>
           </Form>
         </Tabs>
