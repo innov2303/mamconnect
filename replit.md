@@ -4,6 +4,8 @@
 Mam Connect is a platform connecting parents with MAM (Maisons d'Assistantes Maternelles) in France. MAMs can register, create personalized profile pages, and manage their information. Parents can search the directory by city/postal code and view detailed MAM profiles. An admin system manages MAM validation, user management, and support tickets.
 
 ## Recent Changes
+- 2026-02-10: Added MAM session system with token auth - login redirects to profile page, edit buttons visible for owner, no password needed for edits
+- 2026-02-10: Added photo upload from PC with sharp image optimization (resize, sharpen, WebP conversion)
 - 2026-02-10: Split description field into descriptionStructure and descriptionPedagogique (schema, forms, profile page)
 - 2026-02-10: Added admin system with MAM validation workflow, user management, and ticket system
 - 2026-02-10: Added password security (bcrypt hashing, complexity validation)
@@ -13,23 +15,24 @@ Mam Connect is a platform connecting parents with MAM (Maisons d'Assistantes Mat
 - **Frontend**: React + Vite + TailwindCSS + shadcn/ui components
 - **Backend**: Express.js API
 - **Database**: PostgreSQL with Drizzle ORM
-- **Auth**: bcrypt password hashing, Bearer token auth for admin
+- **Auth**: bcrypt password hashing, Bearer token auth for admin and MAM sessions
 - **Routing**: wouter (frontend), Express (backend)
 - **State Management**: TanStack React Query
 
 ## Key Files
 - `shared/schema.ts` - Data models (mams, admins, tickets tables + Zod schemas)
-- `server/routes.ts` - API endpoints (MAM CRUD, admin auth, ticket management)
+- `server/routes.ts` - API endpoints (MAM CRUD, admin auth, MAM auth, ticket management)
 - `server/storage.ts` - Database storage interface
 - `server/db.ts` - Database connection
 - `server/seed.ts` - Seed data (3 sample MAMs + default admin account)
 - `client/src/App.tsx` - Main app with routing (public + admin routes)
+- `client/src/lib/mam-auth.tsx` - MAM authentication context (token + localStorage session)
 - `client/src/pages/home.tsx` - Landing page with hero, features, featured MAMs
 - `client/src/pages/directory.tsx` - MAM directory with search/filter
-- `client/src/pages/mam-profile.tsx` - Individual MAM profile page
+- `client/src/pages/mam-profile.tsx` - Individual MAM profile page (shows edit buttons for owner)
 - `client/src/pages/register.tsx` - MAM registration form
-- `client/src/pages/login.tsx` - MAM login page
-- `client/src/pages/dashboard.tsx` - MAM management dashboard (edit info, team, photos, support tickets)
+- `client/src/pages/login.tsx` - MAM login page (redirects to profile page)
+- `client/src/pages/dashboard.tsx` - MAM management dashboard (token auth, no password needed)
 - `client/src/pages/admin-login.tsx` - Admin login page
 - `client/src/pages/admin-dashboard.tsx` - Admin dashboard (MAM management + tickets)
 
@@ -37,10 +40,12 @@ Mam Connect is a platform connecting parents with MAM (Maisons d'Assistantes Mat
 ### Public
 - `GET /api/mams` - List approved+published MAMs
 - `GET /api/mams/featured` - List featured MAMs (max 6)
+- `GET /api/mams/me` - Get authenticated MAM data (requires Bearer token)
 - `GET /api/mams/:slug` - Get MAM by slug
 - `POST /api/mams` - Register new MAM (status: pending)
-- `POST /api/mams/login` - MAM login
-- `PATCH /api/mams/:id` - Update MAM data (requires currentPassword)
+- `POST /api/mams/login` - MAM login (returns token)
+- `POST /api/upload` - Upload photo (returns URL)
+- `PATCH /api/mams/:id` - Update MAM data (requires Bearer token or currentPassword)
 - `POST /api/mams/:id/tickets` - Create support ticket
 - `GET /api/mams/:id/tickets` - List MAM's tickets
 
