@@ -20,12 +20,11 @@ function PhotoGallery({ photos, name }: { photos: string[]; name: string }) {
 
   return (
     <div className="space-y-3">
-      <div className="relative overflow-hidden rounded-md aspect-video bg-muted">
+      <div className="relative overflow-hidden rounded-md bg-muted flex items-center justify-center" style={{ maxHeight: "500px" }}>
         <img
           src={photos[activeIndex]}
           alt={`${name} - Photo ${activeIndex + 1}`}
-          className="w-full h-full object-cover"
-          style={{ imageRendering: "auto" }}
+          className="w-full h-auto object-contain max-h-[500px]"
           loading="eager"
           decoding="async"
           data-testid="img-gallery-main"
