@@ -65,7 +65,7 @@ export default function Login() {
           </div>
           <h1 className="text-2xl font-bold mb-2" data-testid="text-login-title">Connexion Mam Connect</h1>
           <p className="text-muted-foreground text-sm">
-            Accédez à votre tableau de bord pour gérer votre page
+            Accédez au site pour modifier votre profil MAM ou parent
           </p>
         </div>
 
