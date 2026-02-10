@@ -88,7 +88,7 @@ function FeaturesSection() {
     {
       icon: Bell,
       title: "Notification parent",
-      description: "Activez votre recherche parent et soyez notifié par email dès qu'une nouvelle place compatible est disponible près de chez vous.",
+      description: "Grace à la recherche parent, soyez notifié dès qu'une nouvelle place est disponible.",
     },
   ];
 
