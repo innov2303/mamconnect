@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, MapPin, Users, Shield, ArrowRight, Baby, Clock, Heart } from "lucide-react";
+import { Search, MapPin, Users, Shield, ArrowRight, Baby, Clock, Bell } from "lucide-react";
 import { MamCard } from "@/components/mam-card";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -86,9 +86,9 @@ function FeaturesSection() {
       description: "Capacité d'accueil, tranches d'âge, horaires et activités proposées en un clin d'oeil.",
     },
     {
-      icon: Heart,
-      title: "Contact direct",
-      description: "Contactez directement les MAM qui vous intéressent via téléphone ou email.",
+      icon: Bell,
+      title: "Notification de places disponibles",
+      description: "Activez votre recherche parent et soyez notifié par email dès qu'une nouvelle place compatible est disponible près de chez vous.",
     },
   ];
 
