@@ -28,6 +28,40 @@ const upload = multer({
 
 const SALT_ROUNDS = 12;
 
+function generateVerificationCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+async function sendVerificationEmail(email: string, code: string, name: string) {
+  try {
+    const { getUncachableResendClient } = await import("./resend");
+    const { client, fromEmail } = await getUncachableResendClient();
+    await client.emails.send({
+      from: fromEmail || "Mam Connect <noreply@mamconnect.fr>",
+      to: email,
+      subject: "Vérification de votre adresse email - Mam Connect",
+      html: `
+        <div style="font-family: 'Helvetica', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #e11d6d;">Bienvenue sur Mam Connect !</h2>
+          <p>Bonjour ${name},</p>
+          <p>Pour finaliser votre inscription, veuillez entrer le code de vérification suivant :</p>
+          <div style="background: #fff5f7; border-radius: 8px; padding: 24px; margin: 24px 0; text-align: center;">
+            <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #e11d6d;">${code}</span>
+          </div>
+          <p>Ce code est valable pendant 30 minutes.</p>
+          <p>Si vous n'avez pas créé de compte sur Mam Connect, vous pouvez ignorer cet email.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+          <p style="font-size: 12px; color: #999;">Cet email a été envoyé automatiquement par Mam Connect.</p>
+        </div>
+      `,
+    });
+    return true;
+  } catch (error) {
+    console.error("Erreur envoi email vérification:", error);
+    return false;
+  }
+}
+
 const adminTokens = new Map<string, { adminId: string; email: string; expiresAt: number }>();
 const mamTokens = new Map<string, { mamId: string; email: string; expiresAt: number }>();
 const parentTokens = new Map<string, { parentId: string; email: string; expiresAt: number }>();
@@ -219,6 +253,8 @@ export async function registerRoutes(
 
       const geo = await geocodeAddress(result.data.address, result.data.city, result.data.postalCode);
 
+      const verificationCode = generateVerificationCode();
+
       const mamData = {
         ...result.data,
         password: hashedPassword,
@@ -230,11 +266,14 @@ export async function registerRoutes(
         status: "pending",
         latitude: geo?.latitude || null,
         longitude: geo?.longitude || null,
+        emailVerified: false,
+        emailVerificationCode: verificationCode,
       };
 
       const mam = await storage.createMam(mamData);
-      const { password, ...safeMam } = mam;
-      res.status(201).json(safeMam);
+      await sendVerificationEmail(mam.email, verificationCode, mam.name);
+      const { password, emailVerificationCode, ...safeMam } = mam;
+      res.status(201).json({ ...safeMam, requiresVerification: true });
     } catch (error) {
       console.error("Create MAM error:", error);
       res.status(500).json({ message: "Erreur lors de l'inscription" });
@@ -258,6 +297,10 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Email ou mot de passe incorrect" });
       }
 
+      if (!mam.emailVerified) {
+        return res.status(403).json({ message: "Veuillez vérifier votre adresse email avant de vous connecter", emailNotVerified: true, email: mam.email });
+      }
+
       const token = generateToken();
       mamTokens.set(token, {
         mamId: mam.id,
@@ -265,7 +308,7 @@ export async function registerRoutes(
         expiresAt: Date.now() + 24 * 60 * 60 * 1000,
       });
 
-      const { password, ...safeMam } = mam;
+      const { password, emailVerificationCode, ...safeMam } = mam;
       res.json({ ...safeMam, token });
     } catch (error) {
       res.status(500).json({ message: "Erreur de connexion" });
@@ -535,16 +578,20 @@ export async function registerRoutes(
 
       const hashedPassword = await bcrypt.hash(result.data.password, SALT_ROUNDS);
       const geo = await geocodeAddress(result.data.address, result.data.city, result.data.postalCode);
+      const verificationCode = generateVerificationCode();
 
       const parent = await storage.createParent({
         ...result.data,
         password: hashedPassword,
         latitude: geo?.latitude || null,
         longitude: geo?.longitude || null,
+        emailVerified: false,
+        emailVerificationCode: verificationCode,
       });
 
-      const { password: _, ...parentWithoutPassword } = parent;
-      res.status(201).json(parentWithoutPassword);
+      await sendVerificationEmail(parent.email, verificationCode, parent.firstName);
+      const { password: _, emailVerificationCode: _code, ...parentWithoutPassword } = parent;
+      res.status(201).json({ ...parentWithoutPassword, requiresVerification: true });
     } catch (error) {
       console.error("Create parent error:", error);
       res.status(500).json({ message: "Erreur lors de l'inscription" });
@@ -568,6 +615,10 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Email ou mot de passe incorrect" });
       }
 
+      if (!parent.emailVerified) {
+        return res.status(403).json({ message: "Veuillez vérifier votre adresse email avant de vous connecter", emailNotVerified: true, email: parent.email });
+      }
+
       const token = generateToken();
       parentTokens.set(token, {
         parentId: parent.id,
@@ -575,7 +626,7 @@ export async function registerRoutes(
         expiresAt: Date.now() + 24 * 60 * 60 * 1000,
       });
 
-      const { password: _, ...parentWithoutPassword } = parent;
+      const { password: _, emailVerificationCode: _code, ...parentWithoutPassword } = parent;
       res.json({ token, parent: parentWithoutPassword });
     } catch (error) {
       console.error("Parent login error:", error);
@@ -656,6 +707,88 @@ export async function registerRoutes(
       res.json(allParents);
     } catch (error) {
       res.status(500).json({ message: "Erreur lors de la récupération des parents" });
+    }
+  });
+
+  app.post("/api/verify-email", async (req, res) => {
+    try {
+      const { email, code, type } = req.body;
+      if (!email || !code || !type) {
+        return res.status(400).json({ message: "Email, code et type sont requis" });
+      }
+
+      if (type === "mam") {
+        const mam = await storage.getMamByEmail(email);
+        if (!mam) {
+          return res.status(404).json({ message: "Compte introuvable" });
+        }
+        if (mam.emailVerified) {
+          return res.json({ message: "Email déjà vérifié", alreadyVerified: true });
+        }
+        if (mam.emailVerificationCode !== code) {
+          return res.status(400).json({ message: "Code de vérification incorrect" });
+        }
+        await storage.verifyMamEmail(mam.id);
+        return res.json({ message: "Email vérifié avec succès", verified: true });
+      } else if (type === "parent") {
+        const parent = await storage.getParentByEmail(email);
+        if (!parent) {
+          return res.status(404).json({ message: "Compte introuvable" });
+        }
+        if (parent.emailVerified) {
+          return res.json({ message: "Email déjà vérifié", alreadyVerified: true });
+        }
+        if (parent.emailVerificationCode !== code) {
+          return res.status(400).json({ message: "Code de vérification incorrect" });
+        }
+        await storage.verifyParentEmail(parent.id);
+        return res.json({ message: "Email vérifié avec succès", verified: true });
+      }
+
+      return res.status(400).json({ message: "Type invalide" });
+    } catch (error) {
+      console.error("Verify email error:", error);
+      res.status(500).json({ message: "Erreur lors de la vérification" });
+    }
+  });
+
+  app.post("/api/resend-verification", async (req, res) => {
+    try {
+      const { email, type } = req.body;
+      if (!email || !type) {
+        return res.status(400).json({ message: "Email et type sont requis" });
+      }
+
+      const newCode = generateVerificationCode();
+
+      if (type === "mam") {
+        const mam = await storage.getMamByEmail(email);
+        if (!mam) {
+          return res.status(404).json({ message: "Compte introuvable" });
+        }
+        if (mam.emailVerified) {
+          return res.json({ message: "Email déjà vérifié" });
+        }
+        await storage.setMamVerificationCode(mam.id, newCode);
+        await sendVerificationEmail(email, newCode, mam.name);
+      } else if (type === "parent") {
+        const parent = await storage.getParentByEmail(email);
+        if (!parent) {
+          return res.status(404).json({ message: "Compte introuvable" });
+        }
+        if (parent.emailVerified) {
+          return res.json({ message: "Email déjà vérifié" });
+        }
+        await storage.setParentVerificationCode(parent.id, newCode);
+        await sendVerificationEmail(email, newCode, parent.firstName);
+      } else {
+        return res.status(400).json({ message: "Type invalide" });
+      }
+
+      res.json({ message: "Code de vérification renvoyé" });
+    } catch (error) {
+      console.error("Resend verification error:", error);
+      res.status(500).json({ message: "Erreur lors du renvoi du code" });
     }
   });
 

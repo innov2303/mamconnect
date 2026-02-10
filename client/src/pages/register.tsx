@@ -19,7 +19,7 @@ import { registerMamSchema, getDefaultOpeningHours, DAYS_OF_WEEK } from "@shared
 import type { DaySchedule } from "@shared/schema";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { UserPlus, X, Plus, Check, Clock } from "lucide-react";
+import { UserPlus, X, Plus, Check, Clock, Mail, Loader2, RefreshCw } from "lucide-react";
 import { z } from "zod";
 import { useState } from "react";
 
@@ -40,12 +40,117 @@ const AVAILABLE_SERVICES = [
 
 type RegisterFormValues = z.infer<typeof registerMamSchema>;
 
+function EmailVerificationStep({ email, type, onVerified }: { email: string; type: "mam" | "parent"; onVerified: () => void }) {
+  const [code, setCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
+  const { toast } = useToast();
+
+  const handleVerify = async () => {
+    if (code.length !== 6) return;
+    setVerifying(true);
+    try {
+      const res = await fetch("/api/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code, type }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ title: "Erreur", description: data.message || "Code incorrect", variant: "destructive" });
+        return;
+      }
+      if (data.verified || data.alreadyVerified) {
+        toast({ title: "Email vérifié", description: "Votre adresse email a été vérifiée avec succès." });
+        onVerified();
+      }
+    } catch {
+      toast({ title: "Erreur", description: "Erreur lors de la vérification", variant: "destructive" });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setResending(true);
+    try {
+      const res = await fetch("/api/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, type }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ title: "Erreur", description: data.message || "Impossible de renvoyer le code", variant: "destructive" });
+        return;
+      }
+      toast({ title: "Code renvoyé", description: "Un nouveau code a été envoyé à votre adresse email." });
+    } catch {
+      toast({ title: "Erreur", description: "Impossible de renvoyer le code", variant: "destructive" });
+    } finally {
+      setResending(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-muted/30">
+      <Card className="w-full max-w-md">
+        <CardContent className="p-8 space-y-6 text-center">
+          <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+            <Mail className="h-8 w-8 text-primary" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold">Vérifiez votre email</h2>
+            <p className="text-muted-foreground text-sm">
+              Un code de vérification à 6 chiffres a été envoyé à <strong>{email}</strong>
+            </p>
+          </div>
+          <div className="space-y-4">
+            <Input
+              placeholder="Entrez le code à 6 chiffres"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              className="text-center text-2xl tracking-widest"
+              maxLength={6}
+              data-testid="input-verification-code"
+            />
+            <Button
+              className="w-full gap-2"
+              onClick={handleVerify}
+              disabled={code.length !== 6 || verifying}
+              data-testid="button-verify-code"
+            >
+              {verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              Vérifier
+            </Button>
+          </div>
+          <div className="pt-2 border-t">
+            <p className="text-sm text-muted-foreground mb-2">Vous n'avez pas reçu le code ?</p>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={handleResend}
+              disabled={resending}
+              data-testid="button-resend-code"
+            >
+              {resending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Renvoyer le code
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function Register() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [customService, setCustomService] = useState("");
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState<string | null>(null);
+  const [registeredSlug, setRegisteredSlug] = useState<string | null>(null);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerMamSchema),
@@ -74,11 +179,12 @@ export default function Register() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/mams"] });
-      toast({
-        title: "Inscription envoyée !",
-        description: "Votre inscription est en attente de validation par un administrateur. Vous serez visible dans l'annuaire une fois approuvée.",
-      });
-      navigate(`/dashboard/${data.slug}`);
+      if (data.requiresVerification) {
+        setVerificationEmail(data.email);
+        setRegisteredSlug(data.slug);
+      } else {
+        navigate(`/dashboard/${data.slug}`);
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -106,6 +212,22 @@ export default function Register() {
       prev.includes(service) ? prev.filter((s) => s !== service) : [...prev, service]
     );
   };
+
+  if (verificationEmail) {
+    return (
+      <EmailVerificationStep
+        email={verificationEmail}
+        type="mam"
+        onVerified={() => {
+          toast({
+            title: "Inscription envoyée !",
+            description: "Votre email est vérifié. Votre inscription est en attente de validation par un administrateur.",
+          });
+          navigate("/connexion");
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

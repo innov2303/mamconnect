@@ -70,6 +70,7 @@ export async function seedDatabase() {
       published: true,
       status: "approved",
       password: "demo123456",
+      emailVerified: true,
     },
     {
       name: "La Maison des Bambins",
@@ -127,6 +128,7 @@ export async function seedDatabase() {
       published: true,
       status: "approved",
       password: "demo123456",
+      emailVerified: true,
     },
     {
       name: "Les Coccinelles Joyeuses",
@@ -177,6 +179,7 @@ export async function seedDatabase() {
       published: true,
       status: "approved",
       password: "demo123456",
+      emailVerified: true,
     },
   ];
 

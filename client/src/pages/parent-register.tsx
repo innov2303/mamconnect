@@ -13,16 +13,120 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { registerParentSchema } from "@shared/schema";
-import { Baby, MapPin, Calendar, Mail, Phone, User, Heart, CheckCircle2, Lock, Eye, EyeOff } from "lucide-react";
+import { Baby, MapPin, Calendar, Mail, Phone, User, Heart, CheckCircle2, Lock, Eye, EyeOff, Loader2, RefreshCw, Check } from "lucide-react";
 import { z } from "zod";
 import { useState } from "react";
 
 type ParentFormValues = z.infer<typeof registerParentSchema>;
 
+function EmailVerificationStep({ email, type, onVerified }: { email: string; type: "mam" | "parent"; onVerified: () => void }) {
+  const [code, setCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
+  const { toast } = useToast();
+
+  const handleVerify = async () => {
+    if (code.length !== 6) return;
+    setVerifying(true);
+    try {
+      const res = await fetch("/api/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code, type }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ title: "Erreur", description: data.message || "Code incorrect", variant: "destructive" });
+        return;
+      }
+      if (data.verified || data.alreadyVerified) {
+        toast({ title: "Email vérifié", description: "Votre adresse email a été vérifiée avec succès." });
+        onVerified();
+      }
+    } catch {
+      toast({ title: "Erreur", description: "Erreur lors de la vérification", variant: "destructive" });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setResending(true);
+    try {
+      const res = await fetch("/api/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, type }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ title: "Erreur", description: data.message || "Impossible de renvoyer le code", variant: "destructive" });
+        return;
+      }
+      toast({ title: "Code renvoyé", description: "Un nouveau code a été envoyé à votre adresse email." });
+    } catch {
+      toast({ title: "Erreur", description: "Impossible de renvoyer le code", variant: "destructive" });
+    } finally {
+      setResending(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-muted/30">
+      <Card className="w-full max-w-md">
+        <CardContent className="p-8 space-y-6 text-center">
+          <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+            <Mail className="h-8 w-8 text-primary" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold">Vérifiez votre email</h2>
+            <p className="text-muted-foreground text-sm">
+              Un code de vérification à 6 chiffres a été envoyé à <strong>{email}</strong>
+            </p>
+          </div>
+          <div className="space-y-4">
+            <Input
+              placeholder="Entrez le code à 6 chiffres"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              className="text-center text-2xl tracking-widest"
+              maxLength={6}
+              data-testid="input-verification-code"
+            />
+            <Button
+              className="w-full gap-2"
+              onClick={handleVerify}
+              disabled={code.length !== 6 || verifying}
+              data-testid="button-verify-code"
+            >
+              {verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              Vérifier
+            </Button>
+          </div>
+          <div className="pt-2 border-t">
+            <p className="text-sm text-muted-foreground mb-2">Vous n'avez pas reçu le code ?</p>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={handleResend}
+              disabled={resending}
+              data-testid="button-resend-code"
+            >
+              {resending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Renvoyer le code
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function ParentRegister() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [submitted, setSubmitted] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
@@ -50,12 +154,12 @@ export default function ParentRegister() {
       const res = await apiRequest("POST", "/api/parents", data);
       return res.json();
     },
-    onSuccess: () => {
-      setSubmitted(true);
-      toast({
-        title: "Inscription réussie !",
-        description: "Vous serez notifié dès qu'une place sera disponible près de chez vous.",
-      });
+    onSuccess: (data) => {
+      if (data.requiresVerification) {
+        setVerificationEmail(data.email);
+      } else {
+        setSubmitted(true);
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -77,6 +181,19 @@ export default function ParentRegister() {
     }
     mutation.mutate(data);
   };
+
+  if (verificationEmail) {
+    return (
+      <EmailVerificationStep
+        email={verificationEmail}
+        type="parent"
+        onVerified={() => {
+          setVerificationEmail(null);
+          setSubmitted(true);
+        }}
+      />
+    );
+  }
 
   if (submitted) {
     return (

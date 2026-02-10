@@ -29,6 +29,11 @@ export interface IStorage {
   getParentById(id: string): Promise<Parent | undefined>;
   updateParent(id: string, data: Partial<Parent>): Promise<Parent | undefined>;
 
+  setMamVerificationCode(id: string, code: string): Promise<void>;
+  verifyMamEmail(id: string): Promise<Mam | undefined>;
+  setParentVerificationCode(id: string, code: string): Promise<void>;
+  verifyParentEmail(id: string): Promise<Parent | undefined>;
+
   createNotification(notification: InsertParentNotification): Promise<ParentNotification>;
   getNotificationsByParentId(parentId: string): Promise<ParentNotification[]>;
   markNotificationRead(id: string): Promise<ParentNotification | undefined>;
@@ -154,6 +159,24 @@ export class DatabaseStorage implements IStorage {
 
   async updateParent(id: string, data: Partial<Parent>): Promise<Parent | undefined> {
     const [parent] = await db.update(parents).set(data).where(eq(parents.id, id)).returning();
+    return parent;
+  }
+
+  async setMamVerificationCode(id: string, code: string): Promise<void> {
+    await db.update(mams).set({ emailVerificationCode: code }).where(eq(mams.id, id));
+  }
+
+  async verifyMamEmail(id: string): Promise<Mam | undefined> {
+    const [mam] = await db.update(mams).set({ emailVerified: true, emailVerificationCode: null }).where(eq(mams.id, id)).returning();
+    return mam;
+  }
+
+  async setParentVerificationCode(id: string, code: string): Promise<void> {
+    await db.update(parents).set({ emailVerificationCode: code }).where(eq(parents.id, id));
+  }
+
+  async verifyParentEmail(id: string): Promise<Parent | undefined> {
+    const [parent] = await db.update(parents).set({ emailVerified: true, emailVerificationCode: null }).where(eq(parents.id, id)).returning();
     return parent;
   }
 
