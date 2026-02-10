@@ -256,7 +256,7 @@ function ForgotPasswordFlow({ type, onBack }: { type: "mam" | "parent"; onBack: 
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-0 top-0"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                       onClick={() => setShowPassword(!showPassword)}
                       data-testid="button-toggle-new-password"
                     >
@@ -501,7 +501,7 @@ export default function Login() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="absolute right-0 top-0"
+                                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                                 onClick={() => setShowMamPassword(!showMamPassword)}
                                 data-testid="button-toggle-mam-password"
                               >
@@ -575,7 +575,7 @@ export default function Login() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="absolute right-0 top-0"
+                                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                                 onClick={() => setShowParentPassword(!showParentPassword)}
                                 data-testid="button-toggle-parent-password"
                               >
