@@ -4,6 +4,8 @@
 Mam Connect is a platform connecting parents with MAM (Maisons d'Assistantes Maternelles) in France. MAMs can register, create personalized profile pages, and manage their information. Parents can search the directory by city/postal code and view detailed MAM profiles. An admin system manages MAM validation, user management, and support tickets.
 
 ## Recent Changes
+- 2026-02-10: Added forgot password system on login page - 6-digit reset code via Resend email, multi-step UI (email → code + new password → success), works for both MAM and parent accounts
+- 2026-02-10: Added email verification for MAM and parent registration (6-digit code via Resend, blocks login for unverified accounts)
 - 2026-02-10: Changed openingHours from text to JSONB with structured day-by-day schedule (DaySchedule: day, open, start, end); registration and dashboard forms use Switch+time inputs per day; profile/admin/cards display structured hours
 - 2026-02-10: Added shareable profile link for approved MAMs in dashboard with copy-to-clipboard
 - 2026-02-10: Added warning message prohibiting child photos in MAM photo upload section
