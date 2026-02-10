@@ -3,6 +3,13 @@ import { Resend } from 'resend';
 let connectionSettings: any;
 
 async function getCredentials() {
+  if (process.env.RESEND_API_KEY) {
+    return {
+      apiKey: process.env.RESEND_API_KEY,
+      fromEmail: 'Mam Connect <noreply@mamconnect.fr>'
+    };
+  }
+
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
     ? 'repl ' + process.env.REPL_IDENTITY
@@ -11,7 +18,7 @@ async function getCredentials() {
     : null;
 
   if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
+    throw new Error('RESEND_API_KEY non configurée et connecteur Replit non disponible');
   }
 
   connectionSettings = await fetch(
