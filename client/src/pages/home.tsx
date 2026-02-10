@@ -3,10 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search, MapPin, Users, Shield, ArrowRight, Baby, Clock, Bell } from "lucide-react";
-import { MamCard } from "@/components/mam-card";
-import { useQuery } from "@tanstack/react-query";
-import { Skeleton } from "@/components/ui/skeleton";
-import type { Mam } from "@shared/schema";
 import { useState } from "react";
 import { useLocation } from "wouter";
 
@@ -120,61 +116,92 @@ function FeaturesSection() {
   );
 }
 
-function FeaturedMams() {
-  const { data: mams, isLoading } = useQuery<Mam[]>({
-    queryKey: ["/api/mams", "featured"],
-  });
+function InscriptionSection() {
+  const mamServices = [
+    { icon: Shield, label: "Profil personnalisé et vérifié" },
+    { icon: MapPin, label: "Visibilité dans l'annuaire local" },
+    { icon: Users, label: "Présentation de votre équipe" },
+    { icon: Clock, label: "Gestion des places disponibles" },
+  ];
+
+  const parentServices = [
+    { icon: Bell, label: "Notification dès qu'une place se libère" },
+    { icon: MapPin, label: "Recherche dans un rayon de 30 km" },
+    { icon: Search, label: "Accès à l'annuaire complet" },
+    { icon: Baby, label: "Critères adaptés à votre enfant" },
+  ];
 
   return (
     <section className="py-16 bg-card">
       <div className="mx-auto max-w-7xl px-4">
-        <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold mb-2">MAM en vedette</h2>
-            <p className="text-muted-foreground">Découvrez les Maisons d'Assistantes Maternelles inscrites</p>
-          </div>
-          <Link href="/annuaire">
-            <Button variant="outline" className="gap-2" data-testid="button-view-all-mams">
-              Voir tout l'annuaire
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
+        <div className="text-center mb-10">
+          <h2 className="text-2xl md:text-3xl font-bold mb-3">Rejoignez Mam Connect</h2>
+          <p className="text-muted-foreground max-w-xl mx-auto">
+            Que vous soyez une MAM ou un parent, inscrivez-vous gratuitement et profitez de nos services
+          </p>
         </div>
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
-              <Card key={i}>
-                <Skeleton className="h-48 w-full rounded-t-md" />
-                <CardContent className="p-4 space-y-3">
-                  <Skeleton className="h-5 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-9 w-full" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : mams && mams.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mams.slice(0, 6).map((mam) => (
-              <MamCard key={mam.id} mam={mam} />
-            ))}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Users className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">Aucune MAM inscrite pour le moment.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="flex flex-col" data-testid="card-inscription-mam">
+            <CardContent className="p-6 md:p-8 flex flex-col flex-1">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-md bg-primary/10 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold">Inscription MAM</h3>
+              </div>
+              <p className="text-muted-foreground mb-6">
+                Créez le profil de votre Maison d'Assistantes Maternelles et gagnez en visibilité auprès des familles de votre secteur.
+              </p>
+              <ul className="space-y-3 mb-8 flex-1">
+                {mamServices.map((service) => (
+                  <li key={service.label} className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                      <service.icon className="h-4 w-4 text-primary" />
+                    </div>
+                    <span className="text-sm">{service.label}</span>
+                  </li>
+                ))}
+              </ul>
               <Link href="/inscription">
-                <Button className="mt-4 gap-2" data-testid="button-register-first-mam">
-                  Inscrire la première MAM
+                <Button className="w-full gap-2" data-testid="button-inscription-mam">
+                  Inscrire ma MAM
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
             </CardContent>
           </Card>
-        )}
+
+          <Card className="flex flex-col" data-testid="card-inscription-parent">
+            <CardContent className="p-6 md:p-8 flex flex-col flex-1">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-md bg-primary/10 flex items-center justify-center">
+                  <Baby className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold">Inscription Parent</h3>
+              </div>
+              <p className="text-muted-foreground mb-6">
+                Inscrivez-vous pour être alerté automatiquement dès qu'une place se libère dans une MAM proche de chez vous.
+              </p>
+              <ul className="space-y-3 mb-8 flex-1">
+                {parentServices.map((service) => (
+                  <li key={service.label} className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                      <service.icon className="h-4 w-4 text-primary" />
+                    </div>
+                    <span className="text-sm">{service.label}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/inscription-parent">
+                <Button className="w-full gap-2" data-testid="button-inscription-parent">
+                  Inscription parent
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </section>
   );
@@ -246,7 +273,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col">
       <HeroSection />
       <FeaturesSection />
-      <FeaturedMams />
+      <InscriptionSection />
       <CTASection />
     </div>
   );
