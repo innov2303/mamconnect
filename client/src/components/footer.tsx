@@ -1,5 +1,129 @@
 import { Link } from "wouter";
-import { Heart } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Mail, Send, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+
+function ContactDialog() {
+  const [open, setOpen] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !email || !message) return;
+
+    setSending(true);
+    try {
+      await apiRequest("POST", "/api/contact", { name, email, subject, message });
+      toast({ title: "Message envoyé", description: "Nous vous répondrons dans les plus brefs délais." });
+      setOpen(false);
+      setName("");
+      setEmail("");
+      setSubject("");
+      setMessage("");
+    } catch {
+      toast({ title: "Erreur", description: "Impossible d'envoyer le message. Veuillez réessayer.", variant: "destructive" });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
+          data-testid="button-contact-form"
+        >
+          Nous contacter
+        </button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Mail className="h-5 w-5 text-primary" />
+            Nous contacter
+          </DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="contact-name">Nom *</Label>
+            <Input
+              id="contact-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Votre nom"
+              required
+              data-testid="input-contact-name"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="contact-email">Email *</Label>
+            <Input
+              id="contact-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="votre@email.com"
+              required
+              data-testid="input-contact-email"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="contact-subject">Sujet</Label>
+            <Select value={subject} onValueChange={setSubject}>
+              <SelectTrigger data-testid="select-contact-subject">
+                <SelectValue placeholder="Choisir un sujet" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Demande d'informations">Demande d'informations</SelectItem>
+                <SelectItem value="Problème inscription MAM">Problème inscription MAM</SelectItem>
+                <SelectItem value="Problème inscription parent">Problème inscription parent</SelectItem>
+                <SelectItem value="Autre">Autre</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="contact-message">Message *</Label>
+            <Textarea
+              id="contact-message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Décrivez votre demande..."
+              rows={4}
+              required
+              data-testid="input-contact-message"
+            />
+          </div>
+          <Button type="submit" className="w-full gap-2" disabled={sending} data-testid="button-send-contact">
+            {sending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Envoi en cours...
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4" />
+                Envoyer
+              </>
+            )}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export function Footer() {
   return (
@@ -31,9 +155,10 @@ export function Footer() {
 
           <div>
             <h3 className="font-semibold text-sm mb-3">Contact</h3>
-            <p className="text-sm text-muted-foreground">
-              contact@mamconnect.fr
-            </p>
+            <div className="flex flex-col gap-1.5">
+              <p className="text-sm text-muted-foreground">contact@mamconnect.fr</p>
+              <ContactDialog />
+            </div>
           </div>
         </div>
 

@@ -554,6 +554,40 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/contact", async (req, res) => {
+    try {
+      const { name, email, subject, message } = req.body;
+      if (!name || !email || !message) {
+        return res.status(400).json({ message: "Nom, email et message sont requis" });
+      }
+
+      try {
+        const { getUncachableResendClient } = await import("./resend");
+        const { client, fromEmail } = await getUncachableResendClient();
+        await client.emails.send({
+          from: fromEmail,
+          to: "contact@mamconnect.fr",
+          subject: subject || `Message de contact de ${name}`,
+          html: `
+            <h2>Nouveau message de contact</h2>
+            <p><strong>Nom :</strong> ${name}</p>
+            <p><strong>Email :</strong> ${email}</p>
+            <p><strong>Sujet :</strong> ${subject || "Non précisé"}</p>
+            <hr/>
+            <p>${message.replace(/\n/g, "<br/>")}</p>
+          `,
+          replyTo: email,
+        });
+      } catch (emailError) {
+        console.error("Erreur envoi email contact:", emailError);
+      }
+
+      res.json({ message: "Message envoyé avec succès" });
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors de l'envoi du message" });
+    }
+  });
+
   return httpServer;
 }
 
