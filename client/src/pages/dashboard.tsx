@@ -1152,6 +1152,12 @@ export default function Dashboard() {
                 <Card>
                   <CardContent className="p-6">
                     <h2 className="text-lg font-semibold mb-4">Gérer les photos</h2>
+                    <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3 flex items-start gap-2 mb-4" data-testid="warning-no-children-photos">
+                      <AlertCircle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+                      <p className="text-sm text-destructive dark:text-destructive">
+                        Aucune photo faisant apparaître un enfant n'est autorisée sur le site. Seules les photos de la structure, des espaces et de l'équipe sont acceptées.
+                      </p>
+                    </div>
                     <PhotoManager photos={photos} onUpdate={setPhotos} />
                   </CardContent>
                 </Card>
