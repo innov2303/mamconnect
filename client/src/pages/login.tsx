@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useMamAuth } from "@/lib/mam-auth";
 import { loginMamSchema } from "@shared/schema";
-import { LogIn, UserPlus } from "lucide-react";
+import { LogIn, UserPlus, Baby } from "lucide-react";
 import { z } from "zod";
 
 type LoginFormValues = z.infer<typeof loginMamSchema>;
@@ -123,12 +123,20 @@ export default function Login() {
               <p className="text-sm text-muted-foreground mb-2">
                 Vous n'avez pas encore de compte ?
               </p>
-              <Link href="/inscription">
-                <Button variant="outline" className="gap-2" data-testid="link-go-register">
-                  <UserPlus className="h-4 w-4" />
-                  Inscription MAM
-                </Button>
-              </Link>
+              <div className="flex flex-wrap justify-center gap-3">
+                <Link href="/inscription">
+                  <Button variant="outline" className="gap-2" data-testid="link-go-register">
+                    <UserPlus className="h-4 w-4" />
+                    Inscription MAM
+                  </Button>
+                </Link>
+                <Link href="/inscription-parent">
+                  <Button variant="outline" className="gap-2" data-testid="link-go-register-parent">
+                    <Baby className="h-4 w-4" />
+                    Inscription parent
+                  </Button>
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>
