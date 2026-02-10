@@ -52,6 +52,7 @@ function ScrollToTop() {
 function AppLayout() {
   const [location] = useLocation();
   const isAdminPage = location.startsWith("/admin");
+  const isDashboardPage = location.startsWith("/dashboard/") || location === "/espace-parent";
 
   if (isAdminPage) {
     return (
@@ -70,7 +71,7 @@ function AppLayout() {
       <main className="flex-1">
         <Router />
       </main>
-      <Footer />
+      {!isDashboardPage && <Footer />}
     </div>
   );
 }
