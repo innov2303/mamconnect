@@ -77,6 +77,7 @@ export const mams = pgTable("mams", {
   password: text("password").notNull(),
   emailVerified: boolean("email_verified").notNull().default(false),
   emailVerificationCode: text("email_verification_code"),
+  passwordResetCode: text("password_reset_code"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -86,6 +87,7 @@ export const insertMamSchema = createInsertSchema(mams).omit({
   slug: true,
   emailVerified: true,
   emailVerificationCode: true,
+  passwordResetCode: true,
 });
 
 export const registerMamSchema = z.object({
@@ -203,6 +205,7 @@ export const parents = pgTable("parents", {
   notificationsEnabled: boolean("notifications_enabled").notNull().default(true),
   emailVerified: boolean("email_verified").notNull().default(false),
   emailVerificationCode: text("email_verification_code"),
+  passwordResetCode: text("password_reset_code"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -213,6 +216,7 @@ export const insertParentSchema = createInsertSchema(parents).omit({
   longitude: true,
   emailVerified: true,
   emailVerificationCode: true,
+  passwordResetCode: true,
 });
 
 export const registerParentSchema = z.object({

@@ -34,6 +34,13 @@ export interface IStorage {
   setParentVerificationCode(id: string, code: string): Promise<void>;
   verifyParentEmail(id: string): Promise<Parent | undefined>;
 
+  setMamPasswordResetCode(id: string, code: string): Promise<void>;
+  clearMamPasswordResetCode(id: string): Promise<void>;
+  updateMamPassword(id: string, hashedPassword: string): Promise<void>;
+  setParentPasswordResetCode(id: string, code: string): Promise<void>;
+  clearParentPasswordResetCode(id: string): Promise<void>;
+  updateParentPassword(id: string, hashedPassword: string): Promise<void>;
+
   createNotification(notification: InsertParentNotification): Promise<ParentNotification>;
   getNotificationsByParentId(parentId: string): Promise<ParentNotification[]>;
   markNotificationRead(id: string): Promise<ParentNotification | undefined>;
@@ -178,6 +185,30 @@ export class DatabaseStorage implements IStorage {
   async verifyParentEmail(id: string): Promise<Parent | undefined> {
     const [parent] = await db.update(parents).set({ emailVerified: true, emailVerificationCode: null }).where(eq(parents.id, id)).returning();
     return parent;
+  }
+
+  async setMamPasswordResetCode(id: string, code: string): Promise<void> {
+    await db.update(mams).set({ passwordResetCode: code }).where(eq(mams.id, id));
+  }
+
+  async clearMamPasswordResetCode(id: string): Promise<void> {
+    await db.update(mams).set({ passwordResetCode: null }).where(eq(mams.id, id));
+  }
+
+  async updateMamPassword(id: string, hashedPassword: string): Promise<void> {
+    await db.update(mams).set({ password: hashedPassword, passwordResetCode: null }).where(eq(mams.id, id));
+  }
+
+  async setParentPasswordResetCode(id: string, code: string): Promise<void> {
+    await db.update(parents).set({ passwordResetCode: code }).where(eq(parents.id, id));
+  }
+
+  async clearParentPasswordResetCode(id: string): Promise<void> {
+    await db.update(parents).set({ passwordResetCode: null }).where(eq(parents.id, id));
+  }
+
+  async updateParentPassword(id: string, hashedPassword: string): Promise<void> {
+    await db.update(parents).set({ password: hashedPassword, passwordResetCode: null }).where(eq(parents.id, id));
   }
 
   async createNotification(notifData: InsertParentNotification): Promise<ParentNotification> {

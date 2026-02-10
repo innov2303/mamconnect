@@ -792,6 +792,129 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/forgot-password", async (req, res) => {
+    try {
+      const { email, type } = req.body;
+      if (!email || !type) {
+        return res.status(400).json({ message: "Email et type sont requis" });
+      }
+
+      const resetCode = generateVerificationCode();
+
+      if (type === "mam") {
+        const mam = await storage.getMamByEmail(email);
+        if (!mam) {
+          return res.json({ message: "Si un compte existe avec cet email, un code de réinitialisation a été envoyé." });
+        }
+        await storage.setMamPasswordResetCode(mam.id, resetCode);
+        try {
+          const { getUncachableResendClient } = await import("./resend");
+          const { client, fromEmail } = await getUncachableResendClient();
+          await client.emails.send({
+            from: fromEmail || "Mam Connect <noreply@mamconnect.fr>",
+            to: email,
+            subject: "Réinitialisation de votre mot de passe - Mam Connect",
+            html: `
+              <div style="font-family: 'Helvetica', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #e11d6d;">Réinitialisation du mot de passe</h2>
+                <p>Bonjour ${mam.name},</p>
+                <p>Vous avez demandé la réinitialisation de votre mot de passe. Voici votre code :</p>
+                <div style="background: #fff5f7; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
+                  <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #e11d6d;">${resetCode}</span>
+                </div>
+                <p>Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+                <p style="font-size: 12px; color: #999;">Mam Connect - Plateforme de mise en relation MAM / Parents</p>
+              </div>
+            `,
+          });
+        } catch (emailError) {
+          console.error("Erreur envoi email reset:", emailError);
+        }
+      } else if (type === "parent") {
+        const parent = await storage.getParentByEmail(email);
+        if (!parent) {
+          return res.json({ message: "Si un compte existe avec cet email, un code de réinitialisation a été envoyé." });
+        }
+        await storage.setParentPasswordResetCode(parent.id, resetCode);
+        try {
+          const { getUncachableResendClient } = await import("./resend");
+          const { client, fromEmail } = await getUncachableResendClient();
+          await client.emails.send({
+            from: fromEmail || "Mam Connect <noreply@mamconnect.fr>",
+            to: email,
+            subject: "Réinitialisation de votre mot de passe - Mam Connect",
+            html: `
+              <div style="font-family: 'Helvetica', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #e11d6d;">Réinitialisation du mot de passe</h2>
+                <p>Bonjour ${parent.firstName},</p>
+                <p>Vous avez demandé la réinitialisation de votre mot de passe. Voici votre code :</p>
+                <div style="background: #fff5f7; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
+                  <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #e11d6d;">${resetCode}</span>
+                </div>
+                <p>Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+                <p style="font-size: 12px; color: #999;">Mam Connect - Plateforme de mise en relation MAM / Parents</p>
+              </div>
+            `,
+          });
+        } catch (emailError) {
+          console.error("Erreur envoi email reset:", emailError);
+        }
+      } else {
+        return res.status(400).json({ message: "Type invalide" });
+      }
+
+      res.json({ message: "Si un compte existe avec cet email, un code de réinitialisation a été envoyé." });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ message: "Erreur lors de la demande de réinitialisation" });
+    }
+  });
+
+  app.post("/api/reset-password", async (req, res) => {
+    try {
+      const { email, code, newPassword, type } = req.body;
+      if (!email || !code || !newPassword || !type) {
+        return res.status(400).json({ message: "Tous les champs sont requis" });
+      }
+
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+      if (!passwordRegex.test(newPassword)) {
+        return res.status(400).json({ message: "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial" });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+      if (type === "mam") {
+        const mam = await storage.getMamByEmail(email);
+        if (!mam) {
+          return res.status(400).json({ message: "Compte introuvable" });
+        }
+        if (!mam.passwordResetCode || mam.passwordResetCode !== code) {
+          return res.status(400).json({ message: "Code de réinitialisation incorrect" });
+        }
+        await storage.updateMamPassword(mam.id, hashedPassword);
+      } else if (type === "parent") {
+        const parent = await storage.getParentByEmail(email);
+        if (!parent) {
+          return res.status(400).json({ message: "Compte introuvable" });
+        }
+        if (!parent.passwordResetCode || parent.passwordResetCode !== code) {
+          return res.status(400).json({ message: "Code de réinitialisation incorrect" });
+        }
+        await storage.updateParentPassword(parent.id, hashedPassword);
+      } else {
+        return res.status(400).json({ message: "Type invalide" });
+      }
+
+      res.json({ message: "Mot de passe réinitialisé avec succès" });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ message: "Erreur lors de la réinitialisation du mot de passe" });
+    }
+  });
+
   app.post("/api/contact", async (req, res) => {
     try {
       const { name, email, subject, message } = req.body;
