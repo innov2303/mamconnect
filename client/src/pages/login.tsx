@@ -388,7 +388,7 @@ export default function Login() {
       if (!data) return;
       mamAuth.login(data.token, data);
       toast({ title: "Connexion réussie", description: "Bienvenue sur votre page MAM." });
-      navigate(`/mam/${data.slug}`);
+      setTimeout(() => navigate(`/mam/${data.slug}`), 100);
     },
     onError: (error: Error) => {
       toast({ title: "Erreur de connexion", description: error.message, variant: "destructive" });
@@ -416,7 +416,7 @@ export default function Login() {
       if (!data) return;
       parentAuth.login(data.token, data.parent);
       toast({ title: "Connexion réussie", description: "Bienvenue sur votre espace parent." });
-      navigate("/mon-espace");
+      setTimeout(() => navigate("/mon-espace"), 100);
     },
     onError: (error: Error) => {
       toast({ title: "Erreur de connexion", description: error.message, variant: "destructive" });
