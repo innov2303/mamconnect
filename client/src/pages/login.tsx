@@ -126,7 +126,7 @@ export default function Login() {
               <Link href="/inscription">
                 <Button variant="outline" className="gap-2" data-testid="link-go-register">
                   <UserPlus className="h-4 w-4" />
-                  Inscrire ma MAM
+                  Inscription MAM
                 </Button>
               </Link>
             </div>

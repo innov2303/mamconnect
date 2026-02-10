@@ -165,7 +165,7 @@ function InscriptionSection() {
               </ul>
               <Link href="/inscription">
                 <Button className="w-full gap-2" data-testid="button-inscription-mam">
-                  Inscrire ma MAM
+                  Inscription MAM
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>

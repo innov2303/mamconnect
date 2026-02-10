@@ -103,7 +103,7 @@ export default function Register() {
             <UserPlus className="h-7 w-7 text-primary" />
           </div>
           <h1 className="text-2xl md:text-3xl font-bold mb-2" data-testid="text-register-title">
-            Inscrire ma MAM
+            Inscription MAM
           </h1>
           <p className="text-muted-foreground max-w-md mx-auto">
             Remplissez le formulaire ci-dessous pour créer la page de votre Maison d'Assistantes Maternelles.
@@ -478,7 +478,7 @@ export default function Register() {
                   ) : (
                     <>
                       <UserPlus className="h-4 w-4" />
-                      Inscrire ma MAM
+                      Inscription MAM
                     </>
                   )}
                 </Button>

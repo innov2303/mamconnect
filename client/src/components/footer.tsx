@@ -23,7 +23,7 @@ export function Footer() {
             <div className="flex flex-col gap-1.5">
               <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-home">Accueil</Link>
               <Link href="/annuaire" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-annuaire">Annuaire</Link>
-              <Link href="/inscription" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-inscription">Inscrire ma MAM</Link>
+              <Link href="/inscription" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-inscription">Inscription MAM</Link>
             </div>
           </div>
 
