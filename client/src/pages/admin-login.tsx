@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Shield, LogIn } from "lucide-react";
+import { SEO } from "@/components/seo";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -41,6 +42,7 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <SEO title="Administration" noindex={true} />
       <Card className="w-full max-w-md">
         <CardContent className="p-8">
           <div className="text-center mb-6">

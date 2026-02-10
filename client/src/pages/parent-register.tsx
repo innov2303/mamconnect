@@ -16,6 +16,7 @@ import { registerParentSchema } from "@shared/schema";
 import { Baby, MapPin, Calendar, Mail, Phone, User, Heart, CheckCircle2, Lock, Eye, EyeOff, Loader2, RefreshCw, Check } from "lucide-react";
 import { z } from "zod";
 import { useState } from "react";
+import { SEO } from "@/components/seo";
 
 type ParentFormValues = z.infer<typeof registerParentSchema>;
 
@@ -224,6 +225,11 @@ export default function ParentRegister() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
+      <SEO
+        title="Inscription parent"
+        description="Inscrivez-vous en tant que parent sur Mam Connect. Recevez des notifications quand des places se libèrent dans les MAM près de chez vous."
+        canonical="/inscription-parent"
+      />
       <div className="text-center mb-8">
         <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
           <Baby className="w-7 h-7 text-primary" />

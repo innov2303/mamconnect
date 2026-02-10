@@ -134,6 +134,58 @@ export async function registerRoutes(
 
   app.use("/uploads", (await import("express")).default.static(uploadDir));
 
+  app.get("/robots.txt", (_req: Request, res: Response) => {
+    res.type("text/plain").send(
+      `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /dashboard\nDisallow: /mon-espace\nDisallow: /api/\n\nSitemap: https://mamconnect.fr/sitemap.xml`
+    );
+  });
+
+  app.get("/sitemap.xml", async (_req: Request, res: Response) => {
+    try {
+      const allMams = await storage.getMams();
+      const approvedMams = allMams.filter((m: any) => m.status === "approved" && m.published);
+
+      const staticPages = [
+        { loc: "/", priority: "1.0", changefreq: "daily" },
+        { loc: "/annuaire", priority: "0.9", changefreq: "daily" },
+        { loc: "/inscription", priority: "0.7", changefreq: "monthly" },
+        { loc: "/inscription-parent", priority: "0.7", changefreq: "monthly" },
+        { loc: "/connexion", priority: "0.5", changefreq: "monthly" },
+        { loc: "/politique-de-confidentialite", priority: "0.3", changefreq: "yearly" },
+      ];
+
+      const today = new Date().toISOString().split("T")[0];
+
+      let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+      xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+
+      for (const page of staticPages) {
+        xml += `  <url>\n`;
+        xml += `    <loc>https://mamconnect.fr${page.loc}</loc>\n`;
+        xml += `    <lastmod>${today}</lastmod>\n`;
+        xml += `    <changefreq>${page.changefreq}</changefreq>\n`;
+        xml += `    <priority>${page.priority}</priority>\n`;
+        xml += `  </url>\n`;
+      }
+
+      for (const mam of approvedMams) {
+        xml += `  <url>\n`;
+        xml += `    <loc>https://mamconnect.fr/mam/${mam.slug}</loc>\n`;
+        xml += `    <lastmod>${today}</lastmod>\n`;
+        xml += `    <changefreq>weekly</changefreq>\n`;
+        xml += `    <priority>0.8</priority>\n`;
+        xml += `  </url>\n`;
+      }
+
+      xml += `</urlset>`;
+
+      res.type("application/xml").send(xml);
+    } catch (error) {
+      console.error("Sitemap generation error:", error);
+      res.status(500).send("Erreur lors de la génération du sitemap");
+    }
+  });
+
   const MIN_WIDTH = 1200;
   const MIN_HEIGHT = 800;
 

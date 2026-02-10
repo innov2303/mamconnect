@@ -22,6 +22,7 @@ import {
   AlertCircle, ChevronDown, Building2
 } from "lucide-react";
 import type { Mam, Ticket as TicketType } from "@shared/schema";
+import { SEO } from "@/components/seo";
 
 function getAdminToken() {
   return localStorage.getItem("adminToken") || "";
@@ -751,6 +752,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Administration" noindex={true} />
       <div className="mx-auto max-w-5xl px-4 py-6">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">

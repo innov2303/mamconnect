@@ -9,6 +9,7 @@ import { Search, MapPin, SlidersHorizontal, X, Users } from "lucide-react";
 import { MamCard } from "@/components/mam-card";
 import type { Mam } from "@shared/schema";
 import { useSearch } from "wouter";
+import { SEO } from "@/components/seo";
 
 export default function Directory() {
   const searchString = useSearch();
@@ -65,6 +66,11 @@ export default function Directory() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Annuaire des MAM"
+        description="Parcourez l'annuaire des Maisons d'Assistantes Maternelles en France. Recherchez par ville ou code postal et trouvez la MAM idéale près de chez vous."
+        canonical="/annuaire"
+      />
       <div className="bg-card border-b">
         <div className="mx-auto max-w-7xl px-4 py-8">
           <h1 className="text-2xl md:text-3xl font-bold mb-2" data-testid="text-directory-title">

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Search, MapPin, Users, Shield, ArrowRight, Baby, Clock, Bell } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { SEO } from "@/components/seo";
 
 function HeroSection() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -210,6 +211,17 @@ function InscriptionSection() {
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
+      <SEO
+        description="Trouvez la Maison d'Assistantes Maternelles idéale pour votre enfant. Parcourez l'annuaire des MAM en France, découvrez leurs espaces, leur projet pédagogique et leur équipe."
+        canonical="/"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "Mam Connect",
+          "url": "https://mamconnect.fr",
+          "description": "Plateforme de mise en relation entre parents et Maisons d'Assistantes Maternelles en France"
+        }}
+      />
       <HeroSection />
       <FeaturesSection />
       <InscriptionSection />

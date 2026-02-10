@@ -22,6 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { UserPlus, X, Plus, Check, Clock, Mail, Loader2, RefreshCw } from "lucide-react";
 import { z } from "zod";
 import { useState } from "react";
+import { SEO } from "@/components/seo";
 
 const AVAILABLE_SERVICES = [
   "Repas bio",
@@ -231,6 +232,11 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Inscrire votre MAM"
+        description="Inscrivez votre Maison d'Assistantes Maternelles sur Mam Connect. Créez votre page personnalisée et rejoignez l'annuaire pour être visible par les parents de votre secteur."
+        canonical="/inscription"
+      />
       <div className="mx-auto max-w-3xl px-4 py-8">
         <div className="text-center mb-8">
           <div className="mx-auto w-14 h-14 rounded-md bg-primary/10 flex items-center justify-center mb-4">

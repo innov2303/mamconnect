@@ -17,6 +17,7 @@ import { loginMamSchema, loginParentSchema } from "@shared/schema";
 import { LogIn, UserPlus, Baby, Home, Eye, EyeOff, Mail, Loader2, Check, RefreshCw, KeyRound, ArrowLeft } from "lucide-react";
 import { z } from "zod";
 import { useState } from "react";
+import { SEO } from "@/components/seo";
 
 type MamLoginValues = z.infer<typeof loginMamSchema>;
 type ParentLoginValues = z.infer<typeof loginParentSchema>;
@@ -442,6 +443,11 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <SEO
+        title="Connexion"
+        description="Connectez-vous à votre espace Mam Connect. Accédez à votre tableau de bord MAM ou à votre espace parent."
+        canonical="/connexion"
+      />
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
           <div className="mx-auto w-14 h-14 rounded-md bg-primary/10 flex items-center justify-center mb-4">

@@ -3,6 +3,7 @@ import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useParentAuth } from "@/lib/parent-auth";
+import { SEO } from "@/components/seo";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -309,6 +310,7 @@ export default function ParentDashboard() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
+      <SEO title="Mon espace parent" noindex={true} />
       <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold" data-testid="text-dashboard-title">

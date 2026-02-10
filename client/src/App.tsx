@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { MamAuthProvider } from "@/lib/mam-auth";
 import { ParentAuthProvider } from "@/lib/parent-auth";
+import { HelmetProvider } from "react-helmet-async";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import Home from "@/pages/home";
@@ -78,18 +79,20 @@ function AppLayout() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <MamAuthProvider>
-        <ParentAuthProvider>
-          <ThemeProvider>
-            <TooltipProvider>
-              <AppLayout />
-              <Toaster />
-            </TooltipProvider>
-          </ThemeProvider>
-        </ParentAuthProvider>
-      </MamAuthProvider>
-    </QueryClientProvider>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <MamAuthProvider>
+          <ParentAuthProvider>
+            <ThemeProvider>
+              <TooltipProvider>
+                <AppLayout />
+                <Toaster />
+              </TooltipProvider>
+            </ThemeProvider>
+          </ParentAuthProvider>
+        </MamAuthProvider>
+      </QueryClientProvider>
+    </HelmetProvider>
   );
 }
 

@@ -3,6 +3,7 @@ import { useRoute, useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { useMamAuth } from "@/lib/mam-auth";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { SEO } from "@/components/seo";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -795,6 +796,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Tableau de bord MAM" noindex={true} />
       <div className="mx-auto max-w-4xl px-4 py-6">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>

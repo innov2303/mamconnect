@@ -1,9 +1,15 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Shield } from "lucide-react";
+import { SEO } from "@/components/seo";
 
 export default function PrivacyPolicy() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      <SEO
+        title="Politique de confidentialité"
+        description="Politique de confidentialité de Mam Connect. Découvrez comment nous protégeons vos données personnelles conformément au RGPD."
+        canonical="/politique-de-confidentialite"
+      />
       <div className="flex items-center gap-3 mb-8">
         <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center">
           <Shield className="h-6 w-6 text-primary" />

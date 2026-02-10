@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import type { Mam, StaffMember, AvailableSpot, DaySchedule } from "@shared/schema";
 import { useState } from "react";
+import { SEO } from "@/components/seo";
 
 function PhotoGallery({ photos, name }: { photos: string[]; name: string }) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -158,6 +159,27 @@ export default function MamProfile() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title={`${mam.name} - MAM à ${mam.city}`}
+        description={`${mam.name}, Maison d'Assistantes Maternelles à ${mam.city} (${mam.postalCode}). Capacité ${mam.capacity} enfants. ${mam.descriptionStructure?.substring(0, 120)}...`}
+        canonical={`/mam/${mam.slug}`}
+        ogType="place"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "ChildCare",
+          "name": mam.name,
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": mam.address,
+            "addressLocality": mam.city,
+            "postalCode": mam.postalCode,
+            "addressCountry": "FR"
+          },
+          "telephone": mam.phone,
+          "email": mam.email,
+          ...(mam.coverPhoto ? { "image": mam.coverPhoto } : {})
+        }}
+      />
       <div className="mx-auto max-w-5xl px-4 py-6">
         {isOwner && (
           <div className="mb-4 flex flex-wrap items-center gap-2">
