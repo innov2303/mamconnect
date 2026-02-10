@@ -63,7 +63,7 @@ export default function Login() {
           <div className="mx-auto w-14 h-14 rounded-md bg-primary/10 flex items-center justify-center mb-4">
             <LogIn className="h-7 w-7 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold mb-2" data-testid="text-login-title">Connexion MAM</h1>
+          <h1 className="text-2xl font-bold mb-2" data-testid="text-login-title">Connexion Mam Connect</h1>
           <p className="text-muted-foreground text-sm">
             Accédez à votre tableau de bord pour gérer votre page
           </p>
