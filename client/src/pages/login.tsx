@@ -416,7 +416,7 @@ export default function Login() {
       if (!data) return;
       parentAuth.login(data.token, data.parent);
       toast({ title: "Connexion réussie", description: "Bienvenue sur votre espace parent." });
-      navigate("/espace-parent");
+      navigate("/mon-espace");
     },
     onError: (error: Error) => {
       toast({ title: "Erreur de connexion", description: error.message, variant: "destructive" });

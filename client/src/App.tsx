@@ -32,7 +32,7 @@ function Router() {
       <Route path="/connexion" component={Login} />
       <Route path="/dashboard/:slug" component={Dashboard} />
       <Route path="/inscription-parent" component={ParentRegister} />
-      <Route path="/espace-parent" component={ParentDashboard} />
+      <Route path="/mon-espace" component={ParentDashboard} />
       <Route path="/politique-de-confidentialite" component={PrivacyPolicy} />
       <Route path="/admin" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
@@ -52,7 +52,7 @@ function ScrollToTop() {
 function AppLayout() {
   const [location] = useLocation();
   const isAdminPage = location.startsWith("/admin");
-  const isDashboardPage = location.startsWith("/dashboard/") || location === "/espace-parent";
+  const isDashboardPage = location.startsWith("/dashboard/") || location === "/mon-espace";
 
   if (isAdminPage) {
     return (

@@ -25,7 +25,7 @@ export function Header() {
     ? [
         { href: "/", label: "Accueil", icon: Home },
         { href: "/annuaire", label: "Annuaire", icon: Search },
-        { href: "/espace-parent", label: "Mon espace", icon: User },
+        { href: "/mon-espace", label: "Mon espace", icon: User },
       ]
     : [
         { href: "/", label: "Accueil", icon: Home },
