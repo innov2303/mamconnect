@@ -121,7 +121,7 @@ function InscriptionSection() {
   const mamServices = [
     { icon: Shield, label: "Profil personnalisé et vérifié" },
     { icon: MapPin, label: "Visibilité dans l'annuaire local" },
-    { icon: Users, label: "Présentation de votre équipe" },
+    { icon: Users, label: "Page Web personnalisée de présentation MAM" },
     { icon: Clock, label: "Gestion des places disponibles" },
   ];
 
