@@ -1,38 +1,61 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import { type Mam, type InsertMam, mams } from "@shared/schema";
+import { db } from "./db";
+import { eq, ilike, or } from "drizzle-orm";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getMams(): Promise<Mam[]>;
+  getMamById(id: string): Promise<Mam | undefined>;
+  getMamBySlug(slug: string): Promise<Mam | undefined>;
+  getMamByEmail(email: string): Promise<Mam | undefined>;
+  createMam(mam: InsertMam & { slug: string }): Promise<Mam>;
+  updateMam(id: string, data: Partial<InsertMam>): Promise<Mam | undefined>;
+  searchMams(query: string): Promise<Mam[]>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
+export class DatabaseStorage implements IStorage {
+  async getMams(): Promise<Mam[]> {
+    return db.select().from(mams).where(eq(mams.published, true));
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getMamById(id: string): Promise<Mam | undefined> {
+    const [mam] = await db.select().from(mams).where(eq(mams.id, id));
+    return mam;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async getMamBySlug(slug: string): Promise<Mam | undefined> {
+    const [mam] = await db.select().from(mams).where(eq(mams.slug, slug));
+    return mam;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async getMamByEmail(email: string): Promise<Mam | undefined> {
+    const [mam] = await db.select().from(mams).where(eq(mams.email, email));
+    return mam;
+  }
+
+  async createMam(mamData: InsertMam & { slug: string }): Promise<Mam> {
+    const [mam] = await db.insert(mams).values(mamData).returning();
+    return mam;
+  }
+
+  async updateMam(id: string, data: Partial<InsertMam>): Promise<Mam | undefined> {
+    const [mam] = await db.update(mams).set(data).where(eq(mams.id, id)).returning();
+    return mam;
+  }
+
+  async searchMams(query: string): Promise<Mam[]> {
+    const q = `%${query}%`;
+    return db
+      .select()
+      .from(mams)
+      .where(
+        or(
+          ilike(mams.name, q),
+          ilike(mams.city, q),
+          ilike(mams.postalCode, q),
+          ilike(mams.address, q)
+        )
+      );
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
