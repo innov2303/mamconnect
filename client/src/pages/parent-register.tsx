@@ -25,6 +25,7 @@ export default function ParentRegister() {
   const [submitted, setSubmitted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
 
   const form = useForm<ParentFormValues>({
     resolver: zodResolver(registerParentSchema),
@@ -66,6 +67,14 @@ export default function ParentRegister() {
   });
 
   const onSubmit = (data: ParentFormValues) => {
+    if (!acceptedPrivacy) {
+      toast({
+        title: "Politique de confidentialité",
+        description: "Vous devez accepter la politique de confidentialité pour vous inscrire.",
+        variant: "destructive",
+      });
+      return;
+    }
     mutation.mutate(data);
   };
 
@@ -351,10 +360,31 @@ export default function ParentRegister() {
                 />
               </div>
 
+              <div className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                <Checkbox
+                  id="accept-privacy-parent"
+                  checked={acceptedPrivacy}
+                  onCheckedChange={(checked) => setAcceptedPrivacy(checked === true)}
+                  data-testid="checkbox-privacy-parent"
+                />
+                <div className="space-y-1 leading-none">
+                  <label htmlFor="accept-privacy-parent" className="text-sm font-medium cursor-pointer">
+                    J'accepte la politique de confidentialité *
+                  </label>
+                  <p className="text-sm text-muted-foreground">
+                    En cochant cette case, vous acceptez notre{" "}
+                    <a href="/politique-de-confidentialite" target="_blank" className="text-primary underline" data-testid="link-privacy-parent">
+                      politique de confidentialité
+                    </a>{" "}
+                    et le traitement de vos données personnelles.
+                  </p>
+                </div>
+              </div>
+
               <Button
                 type="submit"
                 className="w-full"
-                disabled={mutation.isPending}
+                disabled={mutation.isPending || !acceptedPrivacy}
                 data-testid="button-submit-parent"
               >
                 {mutation.isPending ? (

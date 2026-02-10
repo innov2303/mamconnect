@@ -16,6 +16,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { registerMamSchema } from "@shared/schema";
+import { Checkbox } from "@/components/ui/checkbox";
 import { UserPlus, X, Plus, Check } from "lucide-react";
 import { z } from "zod";
 import { useState } from "react";
@@ -42,6 +43,7 @@ export default function Register() {
   const { toast } = useToast();
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [customService, setCustomService] = useState("");
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerMamSchema),
@@ -86,6 +88,14 @@ export default function Register() {
   });
 
   const onSubmit = (data: RegisterFormValues) => {
+    if (!acceptedPrivacy) {
+      toast({
+        title: "Politique de confidentialité",
+        description: "Vous devez accepter la politique de confidentialité pour vous inscrire.",
+        variant: "destructive",
+      });
+      return;
+    }
     mutation.mutate(data);
   };
 
@@ -467,10 +477,31 @@ export default function Register() {
                   </div>
                 </div>
 
+                <div className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <Checkbox
+                    id="accept-privacy-mam"
+                    checked={acceptedPrivacy}
+                    onCheckedChange={(checked) => setAcceptedPrivacy(checked === true)}
+                    data-testid="checkbox-privacy-mam"
+                  />
+                  <div className="space-y-1 leading-none">
+                    <label htmlFor="accept-privacy-mam" className="text-sm font-medium cursor-pointer">
+                      J'accepte la politique de confidentialité *
+                    </label>
+                    <p className="text-sm text-muted-foreground">
+                      En cochant cette case, vous acceptez notre{" "}
+                      <a href="/politique-de-confidentialite" target="_blank" className="text-primary underline" data-testid="link-privacy-mam">
+                        politique de confidentialité
+                      </a>{" "}
+                      et le traitement de vos données personnelles.
+                    </p>
+                  </div>
+                </div>
+
                 <Button
                   type="submit"
                   className="w-full gap-2"
-                  disabled={mutation.isPending}
+                  disabled={mutation.isPending || !acceptedPrivacy}
                   data-testid="button-submit-register"
                 >
                   {mutation.isPending ? (

@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { useParentAuth } from "@/lib/parent-auth";
 import { Card, CardContent } from "@/components/ui/card";
@@ -527,6 +527,12 @@ export default function ParentDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <div className="mt-6 text-center">
+        <Link href="/politique-de-confidentialite" className="text-sm text-muted-foreground hover:text-foreground transition-colors underline" data-testid="link-privacy-parent-dashboard">
+          Politique de confidentialité
+        </Link>
+      </div>
     </div>
   );
 }

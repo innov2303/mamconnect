@@ -154,9 +154,12 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="font-semibold text-sm mb-3">Contact</h3>
+            <h3 className="font-semibold text-sm mb-3">Informations</h3>
             <div className="flex flex-col gap-1.5">
               <ContactDialog />
+              <Link href="/politique-de-confidentialite" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-privacy">
+                Politique de confidentialité
+              </Link>
             </div>
           </div>
         </div>

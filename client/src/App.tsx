@@ -19,6 +19,7 @@ import ParentDashboard from "@/pages/parent-dashboard";
 import AdminLogin from "@/pages/admin-login";
 import AdminDashboard from "@/pages/admin-dashboard";
 import ParentRegister from "@/pages/parent-register";
+import PrivacyPolicy from "@/pages/privacy-policy";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -32,6 +33,7 @@ function Router() {
       <Route path="/dashboard/:slug" component={Dashboard} />
       <Route path="/inscription-parent" component={ParentRegister} />
       <Route path="/espace-parent" component={ParentDashboard} />
+      <Route path="/politique-de-confidentialite" component={PrivacyPolicy} />
       <Route path="/admin" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route component={NotFound} />

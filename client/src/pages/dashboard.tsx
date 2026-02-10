@@ -1231,6 +1231,12 @@ export default function Dashboard() {
             {mam && <TicketPanel mamId={mam.id} />}
           </TabsContent>
         </Tabs>
+
+        <div className="mt-6 text-center">
+          <Link href="/politique-de-confidentialite" className="text-sm text-muted-foreground hover:text-foreground transition-colors underline" data-testid="link-privacy-dashboard">
+            Politique de confidentialité
+          </Link>
+        </div>
       </div>
     </div>
   );
