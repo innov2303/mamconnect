@@ -4,6 +4,8 @@
 Mam Connect is a platform connecting parents with MAM (Maisons d'Assistantes Maternelles) in France. MAMs can register, create personalized profile pages, and manage their information. Parents can search the directory by city/postal code and view detailed MAM profiles. An admin system manages MAM validation, user management, and support tickets.
 
 ## Recent Changes
+- 2026-02-10: Added parent registration system with geocoding (api-adresse.data.gouv.fr) and automatic 30km radius notification matching
+- 2026-02-10: Added email notifications via Resend when MAM spots become available near registered parents
 - 2026-02-10: Added available spots management (availableSpots JSONB) - MAMs can add spots with date, count, note; displayed on profile page
 - 2026-02-10: Added staff member photo upload with avatar fallback (initials) in dashboard
 - 2026-02-10: Added automatic image upscaling for photos below 1200x800 (Lanczos3 + sharpening)
@@ -23,11 +25,13 @@ Mam Connect is a platform connecting parents with MAM (Maisons d'Assistantes Mat
 - **State Management**: TanStack React Query
 
 ## Key Files
-- `shared/schema.ts` - Data models (mams, admins, tickets tables + Zod schemas)
-- `server/routes.ts` - API endpoints (MAM CRUD, admin auth, MAM auth, ticket management)
+- `shared/schema.ts` - Data models (mams, admins, tickets, parents, parentNotifications tables + Zod schemas)
+- `server/routes.ts` - API endpoints (MAM CRUD, admin auth, MAM auth, ticket management, parent registration)
 - `server/storage.ts` - Database storage interface
 - `server/db.ts` - Database connection
 - `server/seed.ts` - Seed data (3 sample MAMs + default admin account)
+- `server/geocoding.ts` - Geocoding utility (api-adresse.data.gouv.fr) + Haversine distance calculation
+- `server/resend.ts` - Resend email client (Replit connector integration)
 - `client/src/App.tsx` - Main app with routing (public + admin routes)
 - `client/src/lib/mam-auth.tsx` - MAM authentication context (token + localStorage session)
 - `client/src/pages/home.tsx` - Landing page with hero, features, featured MAMs
@@ -36,6 +40,7 @@ Mam Connect is a platform connecting parents with MAM (Maisons d'Assistantes Mat
 - `client/src/pages/register.tsx` - MAM registration form
 - `client/src/pages/login.tsx` - MAM login page (redirects to profile page)
 - `client/src/pages/dashboard.tsx` - MAM management dashboard (token auth, no password needed)
+- `client/src/pages/parent-register.tsx` - Parent registration form (basic info + search criteria)
 - `client/src/pages/admin-login.tsx` - Admin login page
 - `client/src/pages/admin-dashboard.tsx` - Admin dashboard (MAM management + tickets)
 
@@ -51,6 +56,10 @@ Mam Connect is a platform connecting parents with MAM (Maisons d'Assistantes Mat
 - `PATCH /api/mams/:id` - Update MAM data (requires Bearer token or currentPassword)
 - `POST /api/mams/:id/tickets` - Create support ticket
 - `GET /api/mams/:id/tickets` - List MAM's tickets
+
+### Parent
+- `POST /api/parents` - Register parent (geocodes address, returns parent data with lat/lng)
+- `GET /api/parents/:id/notifications` - List parent's notifications
 
 ### Admin (requires Bearer token)
 - `POST /api/admin/login` - Admin login (returns token)
