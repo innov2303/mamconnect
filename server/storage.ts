@@ -28,6 +28,8 @@ export interface IStorage {
   getAllParents(): Promise<Parent[]>;
   getParentById(id: string): Promise<Parent | undefined>;
   updateParent(id: string, data: Partial<Parent>): Promise<Parent | undefined>;
+  deleteParent(id: string): Promise<boolean>;
+  getAllParentsAdmin(): Promise<Parent[]>;
 
   setMamVerificationCode(id: string, code: string): Promise<void>;
   verifyMamEmail(id: string): Promise<Mam | undefined>;
@@ -167,6 +169,16 @@ export class DatabaseStorage implements IStorage {
   async updateParent(id: string, data: Partial<Parent>): Promise<Parent | undefined> {
     const [parent] = await db.update(parents).set(data).where(eq(parents.id, id)).returning();
     return parent;
+  }
+
+  async deleteParent(id: string): Promise<boolean> {
+    await db.delete(parentNotifications).where(eq(parentNotifications.parentId, id));
+    const result = await db.delete(parents).where(eq(parents.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getAllParentsAdmin(): Promise<Parent[]> {
+    return db.select().from(parents).orderBy(desc(parents.createdAt));
   }
 
   async setMamVerificationCode(id: string, code: string): Promise<void> {

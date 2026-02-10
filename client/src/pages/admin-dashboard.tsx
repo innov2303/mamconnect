@@ -19,9 +19,10 @@ import { queryClient } from "@/lib/queryClient";
 import {
   Shield, Users, Ticket, CheckCircle, XCircle, Clock,
   Trash2, Eye, Search, LogOut, MessageSquare, Send,
-  AlertCircle, ChevronDown, Building2, BarChart3, TrendingUp, UserPlus
+  AlertCircle, ChevronDown, Building2, BarChart3, TrendingUp, UserPlus,
+  Baby, Mail, Phone, MapPin, Calendar, Bell, BellOff
 } from "lucide-react";
-import type { Mam, Ticket as TicketType } from "@shared/schema";
+import type { Mam, Ticket as TicketType, Parent } from "@shared/schema";
 import { SEO } from "@/components/seo";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -713,6 +714,305 @@ function TicketManagement() {
   );
 }
 
+type ParentWithoutPassword = Omit<Parent, "password">;
+
+function ParentManagement() {
+  const { toast } = useToast();
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [selectedParent, setSelectedParent] = useState<ParentWithoutPassword | null>(null);
+  const [parentToDelete, setParentToDelete] = useState<ParentWithoutPassword | null>(null);
+
+  const { data: parentsList = [], isLoading } = useQuery<ParentWithoutPassword[]>({
+    queryKey: ["/api/admin/parents"],
+    queryFn: () => adminFetch("/api/admin/parents"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return adminFetch(`/api/admin/parents/${id}`, { method: "DELETE" });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/parents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      setParentToDelete(null);
+      toast({ title: "Parent supprimé" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const filteredParents = parentsList.filter((p) => {
+    const matchesSearch =
+      !search ||
+      `${p.firstName} ${p.lastName}`.toLowerCase().includes(search.toLowerCase()) ||
+      p.email.toLowerCase().includes(search.toLowerCase()) ||
+      p.city.toLowerCase().includes(search.toLowerCase());
+    const matchesFilter =
+      filterType === "all" ||
+      (filterType === "verified" && p.emailVerified) ||
+      (filterType === "unverified" && !p.emailVerified) ||
+      (filterType === "search_active" && p.searchActive);
+    return matchesSearch && matchesFilter;
+  });
+
+  const counts = {
+    total: parentsList.length,
+    verified: parentsList.filter((p) => p.emailVerified).length,
+    searchActive: parentsList.filter((p) => p.searchActive).length,
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <Card className="hover-elevate cursor-pointer" onClick={() => setFilterType("all")}>
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold" data-testid="text-parent-count-total">{counts.total}</p>
+            <p className="text-xs text-muted-foreground">Total parents</p>
+          </CardContent>
+        </Card>
+        <Card className="hover-elevate cursor-pointer" onClick={() => setFilterType("verified")}>
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-green-600" data-testid="text-parent-count-verified">{counts.verified}</p>
+            <p className="text-xs text-muted-foreground">Email vérifié</p>
+          </CardContent>
+        </Card>
+        <Card className="hover-elevate cursor-pointer" onClick={() => setFilterType("search_active")}>
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-blue-600" data-testid="text-parent-count-active">{counts.searchActive}</p>
+            <p className="text-xs text-muted-foreground">Recherche active</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher par nom, email ou ville..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+            data-testid="input-admin-search-parent"
+          />
+        </div>
+        <Select value={filterType} onValueChange={setFilterType}>
+          <SelectTrigger className="w-[180px]" data-testid="select-parent-filter">
+            <SelectValue placeholder="Filtrer" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous</SelectItem>
+            <SelectItem value="verified">Email vérifié</SelectItem>
+            <SelectItem value="unverified">Non vérifié</SelectItem>
+            <SelectItem value="search_active">Recherche active</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {filteredParents.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <UserPlus className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+            <p className="text-muted-foreground">Aucun parent trouvé</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {filteredParents.map((parent) => (
+            <Card key={parent.id} data-testid={`card-parent-${parent.id}`}>
+              <CardContent className="p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <h3 className="font-semibold text-sm" data-testid={`text-parent-name-${parent.id}`}>
+                        {parent.firstName} {parent.lastName}
+                      </h3>
+                      {parent.emailVerified ? (
+                        <Badge variant="default" data-testid={`badge-verified-${parent.id}`}>Vérifié</Badge>
+                      ) : (
+                        <Badge variant="secondary" data-testid={`badge-unverified-${parent.id}`}>Non vérifié</Badge>
+                      )}
+                      {parent.searchActive && (
+                        <Badge variant="outline" data-testid={`badge-search-active-${parent.id}`}>Recherche active</Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {parent.city} ({parent.postalCode}) - {parent.email}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Inscrit le {new Date(parent.createdAt).toLocaleDateString("fr-FR")}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => setSelectedParent(parent)}
+                      data-testid={`button-view-parent-${parent.id}`}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => setParentToDelete(parent)}
+                      data-testid={`button-delete-parent-${parent.id}`}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={!!selectedParent} onOpenChange={() => setSelectedParent(null)}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          {selectedParent && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex flex-wrap items-center gap-2">
+                  {selectedParent.firstName} {selectedParent.lastName}
+                  {selectedParent.emailVerified ? (
+                    <Badge variant="default">Vérifié</Badge>
+                  ) : (
+                    <Badge variant="secondary">Non vérifié</Badge>
+                  )}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-start gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-muted-foreground text-xs">Email</p>
+                      <p data-testid="text-parent-detail-email">{selectedParent.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-muted-foreground text-xs">Téléphone</p>
+                      <p data-testid="text-parent-detail-phone">{selectedParent.phone}</p>
+                    </div>
+                  </div>
+                  <div className="col-span-2 flex items-start gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-muted-foreground text-xs">Adresse</p>
+                      <p data-testid="text-parent-detail-address">{selectedParent.address}, {selectedParent.city} ({selectedParent.postalCode})</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Baby className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-muted-foreground text-xs">Date de naissance enfant</p>
+                      <p data-testid="text-parent-detail-birth">{new Date(selectedParent.childBirthDate).toLocaleDateString("fr-FR")}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-muted-foreground text-xs">Date de début souhaitée</p>
+                      <p data-testid="text-parent-detail-start">{new Date(selectedParent.desiredStartDate).toLocaleDateString("fr-FR")}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Badge variant={selectedParent.searchActive ? "default" : "secondary"}>
+                    {selectedParent.searchActive ? (
+                      <span className="flex items-center gap-1"><Search className="h-3 w-3" /> Recherche active</span>
+                    ) : (
+                      <span className="flex items-center gap-1"><Search className="h-3 w-3" /> Recherche inactive</span>
+                    )}
+                  </Badge>
+                  <Badge variant={selectedParent.notificationsEnabled ? "default" : "secondary"}>
+                    {selectedParent.notificationsEnabled ? (
+                      <span className="flex items-center gap-1"><Bell className="h-3 w-3" /> Notifications actives</span>
+                    ) : (
+                      <span className="flex items-center gap-1"><BellOff className="h-3 w-3" /> Notifications désactivées</span>
+                    )}
+                  </Badge>
+                </div>
+                {selectedParent.notes && (
+                  <div>
+                    <p className="text-muted-foreground text-xs mb-1">Notes</p>
+                    <p className="text-sm whitespace-pre-wrap" data-testid="text-parent-detail-notes">{selectedParent.notes}</p>
+                  </div>
+                )}
+                <div className="text-xs text-muted-foreground pt-1">
+                  Inscrit le {new Date(selectedParent.createdAt).toLocaleDateString("fr-FR")}
+                  {selectedParent.latitude && selectedParent.longitude && (
+                    <span> — Position : {selectedParent.latitude}, {selectedParent.longitude}</span>
+                  )}
+                </div>
+              </div>
+              <DialogFooter className="flex-wrap gap-2">
+                <Button
+                  variant="destructive"
+                  className="gap-1.5"
+                  onClick={() => {
+                    setSelectedParent(null);
+                    setParentToDelete(selectedParent);
+                  }}
+                  data-testid="button-delete-from-detail"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Supprimer
+                </Button>
+                <Button variant="outline" onClick={() => setSelectedParent(null)}>
+                  Fermer
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!parentToDelete} onOpenChange={() => setParentToDelete(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground" data-testid="text-parent-delete-confirmation">
+            Voulez-vous vraiment supprimer le compte de <strong>{parentToDelete?.firstName} {parentToDelete?.lastName}</strong> ? Cette action est irréversible et supprimera également toutes ses notifications.
+          </p>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setParentToDelete(null)} data-testid="button-cancel-delete-parent">
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (parentToDelete) {
+                  deleteMutation.mutate(parentToDelete.id);
+                }
+              }}
+              disabled={deleteMutation.isPending}
+              data-testid="button-confirm-delete-parent"
+            >
+              <Trash2 className="h-4 w-4" />
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 const MONTH_LABELS: Record<string, string> = {
   "01": "Jan", "02": "Fév", "03": "Mar", "04": "Avr",
   "05": "Mai", "06": "Juin", "07": "Juil", "08": "Août",
@@ -976,10 +1276,14 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="mams">
-          <TabsList className="mb-4">
+          <TabsList className="mb-4 flex-wrap">
             <TabsTrigger value="mams" className="gap-2" data-testid="tab-admin-mams">
+              <Building2 className="h-4 w-4" />
+              MAM
+            </TabsTrigger>
+            <TabsTrigger value="parents" className="gap-2" data-testid="tab-admin-parents">
               <Users className="h-4 w-4" />
-              Gestion des MAM
+              Parents
             </TabsTrigger>
             <TabsTrigger value="tickets" className="gap-2" data-testid="tab-admin-tickets">
               <Ticket className="h-4 w-4" />
@@ -993,6 +1297,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="mams">
             <MamManagement />
+          </TabsContent>
+
+          <TabsContent value="parents">
+            <ParentManagement />
           </TabsContent>
 
           <TabsContent value="tickets">

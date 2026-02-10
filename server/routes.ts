@@ -802,10 +802,23 @@ export async function registerRoutes(
 
   app.get("/api/admin/parents", adminAuth, async (_req, res) => {
     try {
-      const allParents = await storage.getAllParents();
-      res.json(allParents);
+      const allParents = await storage.getAllParentsAdmin();
+      const parentsWithoutPassword = allParents.map(({ password, ...rest }) => rest);
+      res.json(parentsWithoutPassword);
     } catch (error) {
       res.status(500).json({ message: "Erreur lors de la récupération des parents" });
+    }
+  });
+
+  app.delete("/api/admin/parents/:id", adminAuth, async (req, res) => {
+    try {
+      const deleted = await storage.deleteParent(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Parent non trouvé" });
+      }
+      res.json({ message: "Parent supprimé" });
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors de la suppression du parent" });
     }
   });
 
