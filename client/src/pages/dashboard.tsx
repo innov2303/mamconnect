@@ -367,6 +367,7 @@ export default function Dashboard() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [customService, setCustomService] = useState("");
 
   const form = useForm<EditFormValues>({
     resolver: zodResolver(editMamSchema),
@@ -759,6 +760,54 @@ export default function Dashboard() {
                             </Badge>
                           );
                         })}
+                        {selectedServices
+                          .filter((s) => !AVAILABLE_SERVICES.includes(s))
+                          .map((service) => (
+                            <Badge
+                              key={service}
+                              variant="default"
+                              className="cursor-pointer toggle-elevate"
+                              onClick={() => toggleService(service)}
+                            >
+                              <X className="h-3 w-3 mr-1" />
+                              {service}
+                            </Badge>
+                          ))}
+                      </div>
+                      <div className="flex gap-2 mt-3">
+                        <Input
+                          placeholder="Ajouter un service personnalisé"
+                          value={customService}
+                          onChange={(e) => setCustomService(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              const trimmed = customService.trim();
+                              if (trimmed && !selectedServices.includes(trimmed)) {
+                                setSelectedServices((prev) => [...prev, trimmed]);
+                                setCustomService("");
+                              }
+                            }
+                          }}
+                          data-testid="input-custom-service"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="flex-shrink-0 gap-2"
+                          onClick={() => {
+                            const trimmed = customService.trim();
+                            if (trimmed && !selectedServices.includes(trimmed)) {
+                              setSelectedServices((prev) => [...prev, trimmed]);
+                              setCustomService("");
+                            }
+                          }}
+                          disabled={!customService.trim()}
+                          data-testid="button-add-custom-service"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Ajouter
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
