@@ -28,6 +28,7 @@ const upload = multer({
 const SALT_ROUNDS = 12;
 
 const adminTokens = new Map<string, { adminId: string; email: string; expiresAt: number }>();
+const mamTokens = new Map<string, { mamId: string; email: string; expiresAt: number }>();
 
 function generateToken(): string {
   return crypto.randomBytes(32).toString("hex");
@@ -46,6 +47,22 @@ function adminAuth(req: Request, res: Response, next: NextFunction) {
   }
   (req as any).adminId = session.adminId;
   (req as any).adminEmail = session.email;
+  next();
+}
+
+function mamAuth(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Authentification requise" });
+  }
+  const token = authHeader.slice(7);
+  const session = mamTokens.get(token);
+  if (!session || session.expiresAt < Date.now()) {
+    mamTokens.delete(token);
+    return res.status(401).json({ message: "Session expirée, veuillez vous reconnecter" });
+  }
+  (req as any).mamId = session.mamId;
+  (req as any).mamEmail = session.email;
   next();
 }
 
@@ -92,6 +109,20 @@ export async function registerRoutes(
       res.json(safeMams);
     } catch (error) {
       res.status(500).json({ message: "Erreur lors de la récupération des MAM" });
+    }
+  });
+
+  app.get("/api/mams/me", mamAuth, async (req, res) => {
+    try {
+      const mamId = (req as any).mamId;
+      const mam = await storage.getMamById(mamId);
+      if (!mam) {
+        return res.status(404).json({ message: "MAM introuvable" });
+      }
+      const { password, ...safeMam } = mam;
+      res.json(safeMam);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur serveur" });
     }
   });
 
@@ -175,8 +206,15 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Email ou mot de passe incorrect" });
       }
 
+      const token = generateToken();
+      mamTokens.set(token, {
+        mamId: mam.id,
+        email: mam.email,
+        expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+      });
+
       const { password, ...safeMam } = mam;
-      res.json(safeMam);
+      res.json({ ...safeMam, token });
     } catch (error) {
       res.status(500).json({ message: "Erreur de connexion" });
     }
@@ -190,14 +228,25 @@ export async function registerRoutes(
         return res.status(404).json({ message: "MAM introuvable" });
       }
 
-      const { currentPassword } = req.body;
-      if (!currentPassword) {
-        return res.status(401).json({ message: "Mot de passe requis pour modifier votre page" });
+      let authenticated = false;
+      const authHeader = req.headers.authorization;
+      if (authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.slice(7);
+        const session = mamTokens.get(token);
+        if (session && session.expiresAt >= Date.now() && session.mamId === id) {
+          authenticated = true;
+        }
       }
 
-      const passwordMatch = await bcrypt.compare(currentPassword, mam.password);
-      if (!passwordMatch) {
-        return res.status(401).json({ message: "Mot de passe incorrect" });
+      if (!authenticated) {
+        const { currentPassword } = req.body;
+        if (!currentPassword) {
+          return res.status(401).json({ message: "Mot de passe requis pour modifier votre page" });
+        }
+        const passwordMatch = await bcrypt.compare(currentPassword, mam.password);
+        if (!passwordMatch) {
+          return res.status(401).json({ message: "Mot de passe incorrect" });
+        }
       }
 
       const updateData: Record<string, unknown> = {};

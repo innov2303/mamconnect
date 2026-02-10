@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useRoute, Link } from "wouter";
+import { useRoute, useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
+import { useMamAuth } from "@/lib/mam-auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -389,6 +390,8 @@ export default function Dashboard() {
   const [, params] = useRoute("/dashboard/:slug");
   const slug = params?.slug;
   const { toast } = useToast();
+  const auth = useMamAuth();
+  const [, navigate] = useLocation();
 
   const { data: mam, isLoading, error } = useQuery<Mam>({
     queryKey: ["/api/mams", slug],
@@ -398,7 +401,6 @@ export default function Dashboard() {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [customService, setCustomService] = useState("");
 
@@ -446,25 +448,36 @@ export default function Dashboard() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: EditFormValues) => {
-      if (!currentPassword) {
-        throw new Error("Veuillez saisir votre mot de passe actuel pour enregistrer les modifications.");
-      }
       const payload: Record<string, unknown> = {
         ...data,
         services: selectedServices,
         staffMembers,
         photos,
-        currentPassword,
       };
       if (newPassword) {
         payload.newPassword = newPassword;
       }
-      const res = await apiRequest("PATCH", `/api/mams/${mam!.id}`, payload);
+      const res = await fetch(`/api/mams/${mam!.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(auth.token ? { Authorization: `Bearer ${auth.token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        let message = `${res.status}: ${text}`;
+        try {
+          const json = JSON.parse(text);
+          if (json.message) message = json.message;
+        } catch {}
+        throw new Error(message);
+      }
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mams"] });
-      setCurrentPassword("");
       setNewPassword("");
       toast({
         title: "Modifications enregistrées",
@@ -491,6 +504,44 @@ export default function Dashboard() {
   };
 
   if (isLoading) return <DashboardSkeleton />;
+
+  if (!auth.isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md mx-4">
+          <CardContent className="p-8 text-center">
+            <Settings className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h2 className="text-xl font-bold mb-2">Connexion requise</h2>
+            <p className="text-muted-foreground mb-4">
+              Veuillez vous connecter pour accéder à votre tableau de bord.
+            </p>
+            <Link href="/connexion">
+              <Button className="gap-2">Se connecter</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (mam && auth.mam && auth.mam.slug !== slug) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md mx-4">
+          <CardContent className="p-8 text-center">
+            <Settings className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h2 className="text-xl font-bold mb-2">Accès refusé</h2>
+            <p className="text-muted-foreground mb-4">
+              Vous n'avez pas accès à ce tableau de bord.
+            </p>
+            <Link href={`/dashboard/${auth.mam.slug}`}>
+              <Button className="gap-2">Mon tableau de bord</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (error || !mam) {
     return (
@@ -914,24 +965,11 @@ export default function Dashboard() {
               </TabsContent>
 
               <Card className="mt-4">
-                <CardContent className="p-4 space-y-3">
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">
-                      <Lock className="h-3.5 w-3.5 inline mr-1" />
-                      Mot de passe actuel (requis pour enregistrer)
-                    </label>
-                    <Input
-                      type="password"
-                      placeholder="Saisissez votre mot de passe pour confirmer"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      data-testid="input-current-password"
-                    />
-                  </div>
+                <CardContent className="p-4">
                   <Button
                     type="submit"
                     className="w-full gap-2"
-                    disabled={updateMutation.isPending || !currentPassword}
+                    disabled={updateMutation.isPending}
                     data-testid="button-save-changes"
                   >
                     {updateMutation.isPending ? (

@@ -1,19 +1,34 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Home, Search, UserPlus, LogIn, Menu, X } from "lucide-react";
+import { useMamAuth } from "@/lib/mam-auth";
+import { Home, Search, UserPlus, LogIn, Menu, X, LogOut, LayoutDashboard, User } from "lucide-react";
 import { useState } from "react";
 
 export function Header() {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const auth = useMamAuth();
 
-  const navItems = [
-    { href: "/", label: "Accueil", icon: Home },
-    { href: "/annuaire", label: "Annuaire", icon: Search },
-    { href: "/inscription", label: "Inscrire ma MAM", icon: UserPlus },
-    { href: "/connexion", label: "Connexion", icon: LogIn },
-  ];
+  const navItems = auth.isLoggedIn
+    ? [
+        { href: "/", label: "Accueil", icon: Home },
+        { href: "/annuaire", label: "Annuaire", icon: Search },
+        { href: `/mam/${auth.mam!.slug}`, label: "Mon profil", icon: User },
+        { href: `/dashboard/${auth.mam!.slug}`, label: "Tableau de bord", icon: LayoutDashboard },
+      ]
+    : [
+        { href: "/", label: "Accueil", icon: Home },
+        { href: "/annuaire", label: "Annuaire", icon: Search },
+        { href: "/inscription", label: "Inscrire ma MAM", icon: UserPlus },
+        { href: "/connexion", label: "Connexion", icon: LogIn },
+      ];
+
+  const handleLogout = () => {
+    auth.logout();
+    setMobileOpen(false);
+    navigate("/");
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -43,6 +58,17 @@ export function Header() {
               </Link>
             );
           })}
+          {auth.isLoggedIn && (
+            <Button
+              variant="ghost"
+              className="gap-2"
+              onClick={handleLogout}
+              data-testid="button-nav-logout"
+            >
+              <LogOut className="h-4 w-4" />
+              Déconnexion
+            </Button>
+          )}
           <ThemeToggle />
         </nav>
 
@@ -77,6 +103,17 @@ export function Header() {
               </Link>
             );
           })}
+          {auth.isLoggedIn && (
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-2"
+              onClick={handleLogout}
+              data-testid="button-mobile-logout"
+            >
+              <LogOut className="h-4 w-4" />
+              Déconnexion
+            </Button>
+          )}
         </nav>
       )}
     </header>

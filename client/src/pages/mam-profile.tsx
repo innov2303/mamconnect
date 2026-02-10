@@ -5,8 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMamAuth } from "@/lib/mam-auth";
 import {
-  MapPin, Phone, Mail, Clock, Users, Baby, ArrowLeft, ChevronLeft, ChevronRight
+  MapPin, Phone, Mail, Clock, Users, Baby, ArrowLeft, ChevronLeft, ChevronRight,
+  Pencil, AlertCircle, LayoutDashboard
 } from "lucide-react";
 import type { Mam, StaffMember } from "@shared/schema";
 import { useState } from "react";
@@ -131,6 +133,7 @@ function ProfileSkeleton() {
 export default function MamProfile() {
   const [, params] = useRoute("/mam/:slug");
   const slug = params?.slug;
+  const auth = useMamAuth();
 
   const { data: mam, isLoading, error } = useQuery<Mam>({
     queryKey: ["/api/mams", slug],
@@ -161,6 +164,8 @@ export default function MamProfile() {
     );
   }
 
+  const isOwner = auth.isLoggedIn && auth.mam?.slug === slug;
+
   const staffMembers: StaffMember[] = Array.isArray(mam.staffMembers)
     ? (mam.staffMembers as StaffMember[])
     : [];
@@ -173,12 +178,53 @@ export default function MamProfile() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-5xl px-4 py-6">
-        <Link href="/annuaire">
-          <Button variant="ghost" className="gap-2 mb-4" data-testid="button-back-directory">
-            <ArrowLeft className="h-4 w-4" />
-            Retour à l'annuaire
-          </Button>
-        </Link>
+        {isOwner && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <Link href={`/dashboard/${mam.slug}`}>
+              <Button className="gap-2" data-testid="button-edit-my-page">
+                <LayoutDashboard className="h-4 w-4" />
+                Modifier ma page
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {isOwner && mam.status === "pending" && (
+          <Card className="mb-4">
+            <CardContent className="p-4 flex items-start gap-3">
+              <Clock className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-sm">Inscription en attente de validation</p>
+                <p className="text-xs text-muted-foreground">
+                  Votre MAM sera visible dans l'annuaire une fois approuvée par l'administrateur.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {isOwner && mam.status === "rejected" && (
+          <Card className="mb-4">
+            <CardContent className="p-4 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-sm">Inscription refusée</p>
+                <p className="text-xs text-muted-foreground">
+                  Votre MAM n'a pas été approuvée. Contactez le support via votre tableau de bord pour plus d'informations.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {!isOwner && (
+          <Link href="/annuaire">
+            <Button variant="ghost" className="gap-2 mb-4" data-testid="button-back-directory">
+              <ArrowLeft className="h-4 w-4" />
+              Retour à l'annuaire
+            </Button>
+          </Link>
+        )}
 
         {allPhotos.length > 0 && (
           <PhotoGallery photos={allPhotos} name={mam.name} />

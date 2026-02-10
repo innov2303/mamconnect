@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useMamAuth } from "@/lib/mam-auth";
 import { loginMamSchema } from "@shared/schema";
 import { LogIn, UserPlus } from "lucide-react";
 import { z } from "zod";
@@ -19,6 +20,7 @@ type LoginFormValues = z.infer<typeof loginMamSchema>;
 export default function Login() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const auth = useMamAuth();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginMamSchema),
@@ -34,11 +36,12 @@ export default function Login() {
       return res.json();
     },
     onSuccess: (data) => {
+      auth.login(data.token, data);
       toast({
         title: "Connexion réussie",
-        description: "Bienvenue sur votre tableau de bord.",
+        description: "Bienvenue sur votre page.",
       });
-      navigate(`/dashboard/${data.slug}`);
+      navigate(`/mam/${data.slug}`);
     },
     onError: (error: Error) => {
       toast({
