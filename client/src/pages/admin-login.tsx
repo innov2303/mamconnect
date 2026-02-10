@@ -81,7 +81,7 @@ export default function AdminLogin() {
             <Button
               type="submit"
               className="w-full gap-2"
-              disabled={isLoading || !email || !password}
+              disabled={isLoading}
               data-testid="button-admin-login"
             >
               <LogIn className="h-4 w-4" />
