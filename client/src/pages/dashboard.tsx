@@ -25,9 +25,9 @@ import { z } from "zod";
 import { useState, useEffect } from "react";
 
 const AVAILABLE_SERVICES = [
-  "Repas bio", "Activit\u00e9s artistiques", "Sorties ext\u00e9rieures",
+  "Repas bio", "Activités artistiques", "Sorties extérieures",
   "Langue des signes", "Montessori", "Yoga enfants", "Musique",
-  "Psychomotricit\u00e9", "Jardinage", "Lecture", "Motricite libre", "Jeux d'eau",
+  "Psychomotricité", "Jardinage", "Lecture", "Motricite libre", "Jeux d'eau",
 ];
 
 const editMamSchema = z.object({
@@ -110,7 +110,7 @@ function StaffEditor({
               data-testid="input-new-staff-name"
             />
             <Input
-              placeholder="R\u00f4le (ex: Assistante maternelle)"
+              placeholder="Rôle (ex: Assistante maternelle)"
               value={newRole}
               onChange={(e) => setNewRole(e.target.value)}
               data-testid="input-new-staff-role"
@@ -274,8 +274,8 @@ export default function Dashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mams"] });
       toast({
-        title: "Modifications enregistr\u00e9es",
-        description: "Votre page a \u00e9t\u00e9 mise à jour.",
+        title: "Modifications enregistrées",
+        description: "Votre page a été mise à jour.",
       });
     },
     onError: (error: Error) => {
@@ -305,9 +305,9 @@ export default function Dashboard() {
         <Card className="max-w-md mx-4">
           <CardContent className="p-8 text-center">
             <Settings className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-xl font-bold mb-2">Acc&egrave;s refus&eacute;</h2>
+            <h2 className="text-xl font-bold mb-2">Accès refusé</h2>
             <p className="text-muted-foreground mb-4">
-              Impossible d'acc&eacute;der au tableau de bord. Veuillez vous connecter.
+              Impossible d'accéder au tableau de bord. Veuillez vous connecter.
             </p>
             <Link href="/connexion">
               <Button className="gap-2">Se connecter</Button>
@@ -344,7 +344,7 @@ export default function Dashboard() {
             </TabsTrigger>
             <TabsTrigger value="team" className="gap-2" data-testid="tab-team">
               <Users className="h-4 w-4" />
-              &Eacute;quipe
+              Équipe
             </TabsTrigger>
             <TabsTrigger value="photos" className="gap-2" data-testid="tab-photos">
               <Image className="h-4 w-4" />
@@ -389,7 +389,7 @@ export default function Dashboard() {
                         name="phone"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>T&eacute;l&eacute;phone</FormLabel>
+                            <FormLabel>Téléphone</FormLabel>
                             <FormControl>
                               <Input {...field} data-testid="input-edit-phone" />
                             </FormControl>
@@ -444,7 +444,7 @@ export default function Dashboard() {
                         name="capacity"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Capacit&eacute;</FormLabel>
+                            <FormLabel>Capacité</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
@@ -464,7 +464,7 @@ export default function Dashboard() {
                         name="ageMin"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>&Acirc;ge min</FormLabel>
+                            <FormLabel>Âge min</FormLabel>
                             <Select value={String(field.value)} onValueChange={(v) => field.onChange(parseInt(v))}>
                               <FormControl>
                                 <SelectTrigger data-testid="select-edit-age-min">
@@ -486,7 +486,7 @@ export default function Dashboard() {
                         name="ageMax"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>&Acirc;ge max</FormLabel>
+                            <FormLabel>Âge max</FormLabel>
                             <Select value={String(field.value)} onValueChange={(v) => field.onChange(parseInt(v))}>
                               <FormControl>
                                 <SelectTrigger data-testid="select-edit-age-max">
@@ -559,7 +559,7 @@ export default function Dashboard() {
               <TabsContent value="team">
                 <Card>
                   <CardContent className="p-6">
-                    <h2 className="text-lg font-semibold mb-4">G&eacute;rer l'&eacute;quipe</h2>
+                    <h2 className="text-lg font-semibold mb-4">Gérer l'équipe</h2>
                     <StaffEditor staff={staffMembers} onChange={setStaffMembers} />
                   </CardContent>
                 </Card>
@@ -568,7 +568,7 @@ export default function Dashboard() {
               <TabsContent value="photos">
                 <Card>
                   <CardContent className="p-6">
-                    <h2 className="text-lg font-semibold mb-4">G&eacute;rer les photos</h2>
+                    <h2 className="text-lg font-semibold mb-4">Gérer les photos</h2>
                     <PhotoManager photos={photos} onUpdate={setPhotos} />
                   </CardContent>
                 </Card>

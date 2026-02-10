@@ -71,7 +71,7 @@ export default function Directory() {
             Annuaire des MAM
           </h1>
           <p className="text-muted-foreground mb-6">
-            Recherchez une Maison d'Assistantes Maternelles pr&egrave;s de chez vous
+            Recherchez une Maison d'Assistantes Maternelles près de chez vous
           </p>
 
           <form onSubmit={handleSearch} className="flex gap-2 max-w-2xl">
@@ -112,7 +112,7 @@ export default function Directory() {
                   <SelectContent>
                     <SelectItem value="name">Nom</SelectItem>
                     <SelectItem value="city">Ville</SelectItem>
-                    <SelectItem value="capacity">Capacit&eacute;</SelectItem>
+                    <SelectItem value="capacity">Capacité</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -123,7 +123,7 @@ export default function Directory() {
             <div className="mt-3 flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">
-                R&eacute;sultats pour &laquo; {activeSearch} &raquo;
+                Résultats pour « {activeSearch} »
               </span>
               <Button
                 variant="ghost"
@@ -156,7 +156,7 @@ export default function Directory() {
         ) : filteredMams.length > 0 ? (
           <>
             <p className="text-sm text-muted-foreground mb-4" data-testid="text-results-count">
-              {filteredMams.length} MAM trouv&eacute;e{filteredMams.length > 1 ? "s" : ""}
+              {filteredMams.length} MAM trouvée{filteredMams.length > 1 ? "s" : ""}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredMams.map((mam) => (
@@ -168,10 +168,10 @@ export default function Directory() {
           <Card>
             <CardContent className="py-16 text-center">
               <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Aucun r&eacute;sultat</h3>
+              <h3 className="text-lg font-semibold mb-2">Aucun résultat</h3>
               <p className="text-muted-foreground mb-4">
                 {activeSearch
-                  ? `Aucune MAM trouv\u00e9e pour \u00ab ${activeSearch} \u00bb. Essayez une autre recherche.`
+                  ? `Aucune MAM trouvée pour « ${activeSearch} ». Essayez une autre recherche.`
                   : "Aucune MAM inscrite pour le moment."}
               </p>
               {activeSearch && (

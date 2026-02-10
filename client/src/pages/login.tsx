@@ -35,7 +35,7 @@ export default function Login() {
     },
     onSuccess: (data) => {
       toast({
-        title: "Connexion r\u00e9ussie",
+        title: "Connexion réussie",
         description: "Bienvenue sur votre tableau de bord.",
       });
       navigate(`/dashboard/${data.slug}`);
@@ -62,7 +62,7 @@ export default function Login() {
           </div>
           <h1 className="text-2xl font-bold mb-2" data-testid="text-login-title">Connexion MAM</h1>
           <p className="text-muted-foreground text-sm">
-            Acc&eacute;dez à votre tableau de bord pour g&eacute;rer votre page
+            Accédez à votre tableau de bord pour gérer votre page
           </p>
         </div>
 

@@ -37,12 +37,12 @@ function HeroSection() {
       <div className="relative mx-auto max-w-7xl px-4 py-20 md:py-32">
         <div className="max-w-2xl">
           <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight">
-            Trouvez la MAM id&eacute;ale pour votre enfant
+            Trouvez la MAM idéale pour votre enfant
           </h1>
           <p className="text-base md:text-lg text-white/85 mb-8 leading-relaxed">
             Mam Connect vous met en relation avec les Maisons d'Assistantes Maternelles
-            de votre secteur. Parcourez l'annuaire, d&eacute;couvrez leurs espaces et
-            leur &eacute;quipe p&eacute;dagogique.
+            de votre secteur. Parcourez l'annuaire, découvrez leurs espaces et
+            leur équipe pédagogique.
           </p>
 
           <form onSubmit={handleSearch} className="flex gap-2 max-w-lg">
@@ -72,23 +72,23 @@ function FeaturesSection() {
   const features = [
     {
       icon: Search,
-      title: "Recherche simplifi\u00e9e",
-      description: "Trouvez rapidement les MAM autour de chez vous gr\u00e2ce \u00e0 notre annuaire par ville et code postal.",
+      title: "Recherche simplifiée",
+      description: "Trouvez rapidement les MAM autour de chez vous grâce à notre annuaire par ville et code postal.",
     },
     {
       icon: Shield,
-      title: "Profils v\u00e9rifi\u00e9s",
-      description: "Chaque MAM cr\u00e9e son profil d\u00e9taill\u00e9 avec photos, \u00e9quipe et services propos\u00e9s.",
+      title: "Profils vérifiés",
+      description: "Chaque MAM crée son profil détaillé avec photos, équipe et services proposés.",
     },
     {
       icon: Baby,
-      title: "Informations compl\u00e8tes",
-      description: "Capacit\u00e9 d'accueil, tranches d'\u00e2ge, horaires et activit\u00e9s propos\u00e9es en un clin d'oeil.",
+      title: "Informations complètes",
+      description: "Capacité d'accueil, tranches d'âge, horaires et activités proposées en un clin d'oeil.",
     },
     {
       icon: Heart,
       title: "Contact direct",
-      description: "Contactez directement les MAM qui vous int\u00e9ressent via t\u00e9l\u00e9phone ou email.",
+      description: "Contactez directement les MAM qui vous intéressent via téléphone ou email.",
     },
   ];
 
@@ -96,7 +96,7 @@ function FeaturesSection() {
     <section className="py-16 bg-background">
       <div className="mx-auto max-w-7xl px-4">
         <div className="text-center mb-10">
-          <h2 className="text-2xl md:text-3xl font-bold mb-3">Comment \u00e7a marche ?</h2>
+          <h2 className="text-2xl md:text-3xl font-bold mb-3">Comment ça marche ?</h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
             Mam Connect simplifie la recherche de garde pour votre enfant
           </p>
@@ -131,7 +131,7 @@ function FeaturedMams() {
         <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold mb-2">MAM en vedette</h2>
-            <p className="text-muted-foreground">D\u00e9couvrez les Maisons d'Assistantes Maternelles inscrites</p>
+            <p className="text-muted-foreground">Découvrez les Maisons d'Assistantes Maternelles inscrites</p>
           </div>
           <Link href="/annuaire">
             <Button variant="outline" className="gap-2" data-testid="button-view-all-mams">
@@ -168,7 +168,7 @@ function FeaturedMams() {
               <p className="text-muted-foreground">Aucune MAM inscrite pour le moment.</p>
               <Link href="/inscription">
                 <Button className="mt-4 gap-2" data-testid="button-register-first-mam">
-                  Inscrire la premi\u00e8re MAM
+                  Inscrire la première MAM
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
@@ -189,11 +189,11 @@ function CTASection() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold mb-3">
-                  Vous g\u00e9rez une MAM ?
+                  Vous gérez une MAM ?
                 </h2>
                 <p className="text-primary-foreground/85 mb-6">
                   Inscrivez votre Maison d'Assistantes Maternelles gratuitement
-                  et gagnez en visibilit\u00e9 aupr\u00e8s des parents de votre secteur.
+                  et gagnez en visibilité auprès des parents de votre secteur.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <Link href="/inscription">
@@ -221,7 +221,7 @@ function CTASection() {
                   </div>
                   <div className="p-4">
                     <Users className="h-8 w-8 mx-auto mb-2 text-primary-foreground/80" />
-                    <p className="text-sm text-primary-foreground/80">\u00c9quipe d\u00e9taill\u00e9e</p>
+                    <p className="text-sm text-primary-foreground/80">Équipe détaillée</p>
                   </div>
                   <div className="p-4">
                     <Clock className="h-8 w-8 mx-auto mb-2 text-primary-foreground/80" />
@@ -229,7 +229,7 @@ function CTASection() {
                   </div>
                   <div className="p-4">
                     <Shield className="h-8 w-8 mx-auto mb-2 text-primary-foreground/80" />
-                    <p className="text-sm text-primary-foreground/80">Profil v\u00e9rifi\u00e9</p>
+                    <p className="text-sm text-primary-foreground/80">Profil vérifié</p>
                   </div>
                 </div>
               </div>

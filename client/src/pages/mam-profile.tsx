@@ -209,7 +209,7 @@ export default function MamProfile() {
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold mb-3">&Agrave; propos</h2>
+              <h2 className="text-lg font-semibold mb-3">À propos</h2>
               <p className="text-muted-foreground leading-relaxed whitespace-pre-line" data-testid="text-mam-description">
                 {mam.description}
               </p>
@@ -217,7 +217,7 @@ export default function MamProfile() {
 
             {mam.services && mam.services.length > 0 && (
               <div>
-                <h2 className="text-lg font-semibold mb-3">Services propos&eacute;s</h2>
+                <h2 className="text-lg font-semibold mb-3">Services proposés</h2>
                 <div className="flex flex-wrap gap-2">
                   {mam.services.map((service) => (
                     <Badge key={service} variant="outline" data-testid={`badge-service-${service}`}>
@@ -230,7 +230,7 @@ export default function MamProfile() {
 
             {staffMembers.length > 0 && (
               <div>
-                <h2 className="text-lg font-semibold mb-3">L'&eacute;quipe</h2>
+                <h2 className="text-lg font-semibold mb-3">L'équipe</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {staffMembers.map((member, i) => (
                     <StaffCard key={i} member={member} />
@@ -243,7 +243,7 @@ export default function MamProfile() {
           <div className="space-y-4">
             <Card>
               <CardContent className="p-5 space-y-4">
-                <h3 className="font-semibold">Coordonn&eacute;es</h3>
+                <h3 className="font-semibold">Coordonnées</h3>
 
                 <div className="space-y-3">
                   <a
@@ -293,11 +293,11 @@ export default function MamProfile() {
                 <h3 className="font-semibold">Informations</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Capacit&eacute;</span>
+                    <span className="text-muted-foreground">Capacité</span>
                     <span className="font-medium">{mam.capacity} enfants</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">&Acirc;ge accept&eacute;</span>
+                    <span className="text-muted-foreground">Âge accepté</span>
                     <span className="font-medium">{mam.ageMin} - {mam.ageMax} ans</span>
                   </div>
                 </div>

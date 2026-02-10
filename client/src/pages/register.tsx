@@ -22,13 +22,13 @@ import { useState } from "react";
 
 const AVAILABLE_SERVICES = [
   "Repas bio",
-  "Activit\u00e9s artistiques",
-  "Sorties ext\u00e9rieures",
+  "Activités artistiques",
+  "Sorties extérieures",
   "Langue des signes",
   "Montessori",
   "Yoga enfants",
   "Musique",
-  "Psychomotricit\u00e9",
+  "Psychomotricité",
   "Jardinage",
   "Lecture",
   "Motricite libre",
@@ -69,7 +69,7 @@ export default function Register() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/mams"] });
       toast({
-        title: "MAM inscrite avec succ\u00e8s !",
+        title: "MAM inscrite avec succès !",
         description: "Votre page est maintenant visible dans l'annuaire.",
       });
       navigate(`/mam/${data.slug}`);
@@ -104,7 +104,7 @@ export default function Register() {
             Inscrire ma MAM
           </h1>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Remplissez le formulaire ci-dessous pour cr&eacute;er la page de votre Maison d'Assistantes Maternelles.
+            Remplissez le formulaire ci-dessous pour créer la page de votre Maison d'Assistantes Maternelles.
           </p>
         </div>
 
@@ -113,7 +113,7 @@ export default function Register() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div>
-                  <h2 className="text-lg font-semibold mb-4">Informations g&eacute;n&eacute;rales</h2>
+                  <h2 className="text-lg font-semibold mb-4">Informations générales</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -148,7 +148,7 @@ export default function Register() {
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>T&eacute;l&eacute;phone *</FormLabel>
+                          <FormLabel>Téléphone *</FormLabel>
                           <FormControl>
                             <Input placeholder="06 12 34 56 78" {...field} data-testid="input-phone" />
                           </FormControl>
@@ -164,10 +164,10 @@ export default function Register() {
                         <FormItem className="md:col-span-2">
                           <FormLabel>Mot de passe *</FormLabel>
                           <FormDescription>
-                            Ce mot de passe vous permettra de modifier votre page ult&eacute;rieurement.
+                            Ce mot de passe vous permettra de modifier votre page ultérieurement.
                           </FormDescription>
                           <FormControl>
-                            <Input type="password" placeholder="6 caract\u00e8res minimum" {...field} data-testid="input-password" />
+                            <Input type="password" placeholder="6 caractères minimum" {...field} data-testid="input-password" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -184,7 +184,7 @@ export default function Register() {
                       name="address"
                       render={({ field }) => (
                         <FormItem className="md:col-span-2">
-                          <FormLabel>Adresse compl&egrave;te *</FormLabel>
+                          <FormLabel>Adresse complète *</FormLabel>
                           <FormControl>
                             <Input placeholder="12 rue des Lilas" {...field} data-testid="input-address" />
                           </FormControl>
@@ -231,7 +231,7 @@ export default function Register() {
                       name="capacity"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Capacit&eacute; d'accueil *</FormLabel>
+                          <FormLabel>Capacité d'accueil *</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
@@ -252,7 +252,7 @@ export default function Register() {
                       name="ageMin"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>&Acirc;ge minimum</FormLabel>
+                          <FormLabel>Âge minimum</FormLabel>
                           <Select
                             value={String(field.value)}
                             onValueChange={(v) => field.onChange(parseInt(v))}
@@ -280,7 +280,7 @@ export default function Register() {
                       name="ageMax"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>&Acirc;ge maximum</FormLabel>
+                          <FormLabel>Âge maximum</FormLabel>
                           <Select
                             value={String(field.value)}
                             onValueChange={(v) => field.onChange(parseInt(v))}
@@ -326,7 +326,7 @@ export default function Register() {
                     <FormItem>
                       <FormLabel>Description *</FormLabel>
                       <FormDescription>
-                        D&eacute;crivez votre MAM, votre projet p&eacute;dagogique, vos valeurs...
+                        Décrivez votre MAM, votre projet pédagogique, vos valeurs...
                       </FormDescription>
                       <FormControl>
                         <Textarea
@@ -342,9 +342,9 @@ export default function Register() {
                 />
 
                 <div>
-                  <h2 className="text-lg font-semibold mb-3">Services propos&eacute;s</h2>
+                  <h2 className="text-lg font-semibold mb-3">Services proposés</h2>
                   <p className="text-sm text-muted-foreground mb-3">
-                    S&eacute;lectionnez les services que vous proposez (optionnel)
+                    Sélectionnez les services que vous proposez (optionnel)
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {AVAILABLE_SERVICES.map((service) => {
