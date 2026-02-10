@@ -24,6 +24,8 @@ export function Footer() {
               <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-home">Accueil</Link>
               <Link href="/annuaire" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-annuaire">Annuaire</Link>
               <Link href="/inscription" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-inscription">Inscription MAM</Link>
+              <Link href="/inscription-parent" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-inscription-parent">Inscription parent</Link>
+              <Link href="/connexion" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-connexion">Connexion</Link>
             </div>
           </div>
 
