@@ -82,6 +82,9 @@ export async function registerRoutes(
 
   app.use("/uploads", (await import("express")).default.static(uploadDir));
 
+  const MIN_WIDTH = 1200;
+  const MIN_HEIGHT = 800;
+
   app.post("/api/upload", upload.single("photo"), async (req: Request, res: Response) => {
     if (!req.file) {
       return res.status(400).json({ message: "Aucun fichier envoyé ou format non supporté (jpg, png, webp)" });
@@ -90,13 +93,40 @@ export async function registerRoutes(
       const filename = `${crypto.randomBytes(16).toString("hex")}.webp`;
       const outputPath = path.join(uploadDir, filename);
 
-      await sharp(req.file.buffer)
-        .resize(1920, 1440, { fit: "inside", withoutEnlargement: true })
-        .sharpen({ sigma: 1.5 })
+      const metadata = await sharp(req.file.buffer).metadata();
+      const origWidth = metadata.width || 0;
+      const origHeight = metadata.height || 0;
+
+      let pipeline = sharp(req.file.buffer);
+
+      const needsUpscale = origWidth < MIN_WIDTH || origHeight < MIN_HEIGHT;
+      if (needsUpscale) {
+        const scaleX = MIN_WIDTH / origWidth;
+        const scaleY = MIN_HEIGHT / origHeight;
+        const scale = Math.max(scaleX, scaleY);
+        const newWidth = Math.round(origWidth * scale);
+        const newHeight = Math.round(origHeight * scale);
+        pipeline = pipeline.resize(newWidth, newHeight, {
+          kernel: sharp.kernel.lanczos3,
+          fit: "fill",
+        });
+      } else {
+        pipeline = pipeline.resize(1920, 1440, { fit: "inside", withoutEnlargement: true });
+      }
+
+      await pipeline
+        .sharpen({ sigma: needsUpscale ? 2.0 : 1.5 })
         .webp({ quality: 92, effort: 6 })
         .toFile(outputPath);
 
-      res.json({ url: `/uploads/${filename}` });
+      const finalMeta = await sharp(outputPath).metadata();
+
+      res.json({
+        url: `/uploads/${filename}`,
+        upscaled: needsUpscale,
+        originalSize: `${origWidth}x${origHeight}`,
+        finalSize: `${finalMeta.width}x${finalMeta.height}`,
+      });
     } catch (error: any) {
       res.status(500).json({ message: "Erreur lors du traitement de l'image" });
     }

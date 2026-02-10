@@ -166,6 +166,12 @@ function PhotoManager({
         }
         const data = await res.json();
         newPhotos.push(data.url);
+        if (data.upscaled) {
+          toast({
+            title: "Image redimensionnée",
+            description: `Photo agrandie de ${data.originalSize} à ${data.finalSize} pour une meilleure qualité d'affichage.`,
+          });
+        }
       } catch (error: any) {
         toast({
           title: "Erreur",
@@ -215,7 +221,7 @@ function PhotoManager({
           <span className="text-sm text-muted-foreground">
             {uploading ? "Envoi en cours..." : "Cliquez ou glissez vos photos ici"}
           </span>
-          <span className="text-xs text-muted-foreground">JPG, PNG ou WebP (max 5 Mo)</span>
+          <span className="text-xs text-muted-foreground">JPG, PNG ou WebP (max 5 Mo) - min. 1200x800 recommandé</span>
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
