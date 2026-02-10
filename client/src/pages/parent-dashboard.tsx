@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useParentAuth } from "@/lib/parent-auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   User, MapPin, Save, Search, Bell, BellOff, Baby, Calendar,
-  LogOut, Mail, Phone, CheckCircle2, AlertCircle
+  LogOut, Mail, Phone, CheckCircle2, AlertCircle, Shield, Eye, EyeOff
 } from "lucide-react";
 import { z } from "zod";
 import { useState, useEffect } from "react";
@@ -35,6 +36,22 @@ const editParentSchema = z.object({
 });
 
 type EditParentValues = z.infer<typeof editParentSchema>;
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Mot de passe actuel requis"),
+  newPassword: z.string()
+    .min(8, "Le mot de passe doit contenir au moins 8 caractères")
+    .regex(/[A-Z]/, "Le mot de passe doit contenir au moins une majuscule")
+    .regex(/[a-z]/, "Le mot de passe doit contenir au moins une minuscule")
+    .regex(/[0-9]/, "Le mot de passe doit contenir au moins un chiffre")
+    .regex(/[@$!%*?&#]/, "Le mot de passe doit contenir au moins un caractère spécial (@$!%*?&#)"),
+  confirmPassword: z.string().min(1, "Confirmation requise"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Les mots de passe ne correspondent pas",
+  path: ["confirmPassword"],
+});
+
+type ChangePasswordValues = z.infer<typeof changePasswordSchema>;
 
 interface ParentData {
   id: string;
@@ -201,8 +218,56 @@ export default function ParentDashboard() {
     },
   });
 
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const passwordForm = useForm<ChangePasswordValues>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: ChangePasswordValues) => {
+      const res = await fetch("/api/parents/me/password", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          currentPassword: data.currentPassword,
+          newPassword: data.newPassword,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Erreur");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Mot de passe modifié", description: "Votre mot de passe a été mis à jour avec succès." });
+      passwordForm.reset();
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    },
+  });
+
   const onSubmit = (data: EditParentValues) => {
     updateMutation.mutate(data);
+  };
+
+  const onPasswordSubmit = (data: ChangePasswordValues) => {
+    changePasswordMutation.mutate(data);
   };
 
   const handleLogout = () => {
@@ -297,6 +362,10 @@ export default function ParentDashboard() {
                 {notifications.filter(n => !n.read).length}
               </Badge>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="security" data-testid="tab-security">
+            <Shield className="w-4 h-4 mr-2" />
+            Sécurité
           </TabsTrigger>
         </TabsList>
 
@@ -523,6 +592,112 @@ export default function ParentDashboard() {
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="security">
+          <Card>
+            <CardContent className="pt-6">
+              <h3 className="text-lg font-semibold flex items-center gap-2 mb-6">
+                <Shield className="w-5 h-5 text-primary" />
+                Changer le mot de passe
+              </h3>
+              <Form {...passwordForm}>
+                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4 max-w-md">
+                  <FormField
+                    control={passwordForm.control}
+                    name="currentPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mot de passe actuel</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type={showCurrentPassword ? "text" : "password"}
+                              placeholder="Votre mot de passe actuel"
+                              className="pr-10"
+                              {...field}
+                              data-testid="input-current-password"
+                            />
+                            <span
+                              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground"
+                              onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                              data-testid="toggle-current-password"
+                            >
+                              {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </span>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={passwordForm.control}
+                    name="newPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nouveau mot de passe</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type={showNewPassword ? "text" : "password"}
+                              placeholder="Votre nouveau mot de passe"
+                              className="pr-10"
+                              {...field}
+                              data-testid="input-new-password"
+                            />
+                            <span
+                              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground"
+                              onClick={() => setShowNewPassword(!showNewPassword)}
+                              data-testid="toggle-new-password"
+                            >
+                              {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </span>
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          8 caractères minimum, une majuscule, une minuscule, un chiffre et un caractère spécial
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={passwordForm.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirmer le nouveau mot de passe</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type={showConfirmPassword ? "text" : "password"}
+                              placeholder="Confirmez le nouveau mot de passe"
+                              className="pr-10"
+                              {...field}
+                              data-testid="input-confirm-password"
+                            />
+                            <span
+                              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              data-testid="toggle-confirm-password"
+                            >
+                              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </span>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" disabled={changePasswordMutation.isPending} data-testid="button-change-password">
+                    <Save className="w-4 h-4 mr-2" />
+                    {changePasswordMutation.isPending ? "Modification..." : "Modifier le mot de passe"}
+                  </Button>
+                </form>
+              </Form>
             </CardContent>
           </Card>
         </TabsContent>
