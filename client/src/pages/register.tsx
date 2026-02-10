@@ -48,7 +48,8 @@ export default function Register() {
       name: "",
       email: "",
       phone: "",
-      description: "",
+      descriptionStructure: "",
+      descriptionPedagogique: "",
       address: "",
       city: "",
       postalCode: "",
@@ -346,19 +347,41 @@ export default function Register() {
 
                 <FormField
                   control={form.control}
-                  name="description"
+                  name="descriptionStructure"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description *</FormLabel>
+                      <FormLabel>Description de la structure *</FormLabel>
                       <FormDescription>
-                        Décrivez votre MAM, votre projet pédagogique, vos valeurs...
+                        Décrivez votre lieu d'accueil : surface, aménagements, extérieur...
                       </FormDescription>
                       <FormControl>
                         <Textarea
                           className="min-h-[120px] resize-none"
-                          placeholder="Notre MAM accueille les enfants dans un cadre chaleureux et stimulant..."
+                          placeholder="Ex : Maison de 100m2, clôturée avec jardin de 50m2, proche d'un parc public..."
                           {...field}
-                          data-testid="input-description"
+                          data-testid="input-description-structure"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="descriptionPedagogique"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description du projet pédagogique *</FormLabel>
+                      <FormDescription>
+                        Décrivez votre approche éducative, vos valeurs, les activités proposées...
+                      </FormDescription>
+                      <FormControl>
+                        <Textarea
+                          className="min-h-[120px] resize-none"
+                          placeholder="Ex : Notre projet s'appuie sur la motricité libre, l'éveil sensoriel et le respect du rythme de chaque enfant..."
+                          {...field}
+                          data-testid="input-description-pedagogique"
                         />
                       </FormControl>
                       <FormMessage />

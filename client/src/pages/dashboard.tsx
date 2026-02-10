@@ -35,7 +35,8 @@ const editMamSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   phone: z.string().min(10),
-  description: z.string().min(20),
+  descriptionStructure: z.string().min(20),
+  descriptionPedagogique: z.string().min(20),
   address: z.string().min(5),
   city: z.string().min(2),
   postalCode: z.string().regex(/^\d{5}$/),
@@ -373,7 +374,8 @@ export default function Dashboard() {
       name: "",
       email: "",
       phone: "",
-      description: "",
+      descriptionStructure: "",
+      descriptionPedagogique: "",
       address: "",
       city: "",
       postalCode: "",
@@ -390,7 +392,8 @@ export default function Dashboard() {
         name: mam.name,
         email: mam.email,
         phone: mam.phone,
-        description: mam.description,
+        descriptionStructure: mam.descriptionStructure,
+        descriptionPedagogique: mam.descriptionPedagogique,
         address: mam.address,
         city: mam.city,
         postalCode: mam.postalCode,
@@ -713,12 +716,26 @@ export default function Dashboard() {
 
                     <FormField
                       control={form.control}
-                      name="description"
+                      name="descriptionStructure"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Description</FormLabel>
+                          <FormLabel>Description de la structure</FormLabel>
                           <FormControl>
-                            <Textarea className="min-h-[120px] resize-none" {...field} data-testid="input-edit-description" />
+                            <Textarea className="min-h-[120px] resize-none" placeholder="Surface, aménagements, extérieur..." {...field} data-testid="input-edit-description-structure" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="descriptionPedagogique"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description du projet pédagogique</FormLabel>
+                          <FormControl>
+                            <Textarea className="min-h-[120px] resize-none" placeholder="Approche éducative, valeurs, activités..." {...field} data-testid="input-edit-description-pedagogique" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

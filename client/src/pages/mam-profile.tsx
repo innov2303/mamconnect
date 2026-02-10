@@ -209,11 +209,20 @@ export default function MamProfile() {
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold mb-3">À propos</h2>
-              <p className="text-muted-foreground leading-relaxed whitespace-pre-line" data-testid="text-mam-description">
-                {mam.description}
+              <h2 className="text-lg font-semibold mb-3">La structure</h2>
+              <p className="text-muted-foreground leading-relaxed whitespace-pre-line" data-testid="text-mam-description-structure">
+                {mam.descriptionStructure}
               </p>
             </div>
+
+            {mam.descriptionPedagogique && (
+              <div>
+                <h2 className="text-lg font-semibold mb-3">Projet pédagogique</h2>
+                <p className="text-muted-foreground leading-relaxed whitespace-pre-line" data-testid="text-mam-description-pedagogique">
+                  {mam.descriptionPedagogique}
+                </p>
+              </div>
+            )}
 
             {mam.services && mam.services.length > 0 && (
               <div>

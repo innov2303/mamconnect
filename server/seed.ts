@@ -31,8 +31,10 @@ export async function seedDatabase() {
       slug: "les-petits-explorateurs",
       email: "contact@petits-explorateurs.fr",
       phone: "04 78 12 34 56",
-      description:
-        "Notre MAM accueille vos enfants dans un cadre chaleureux et bienveillant au c\u0153ur de Lyon. Notre projet pédagogique s'inspire de la méthode Montessori et favorise l'autonomie, la découverte sensorielle et le respect du rythme de chaque enfant.\n\nNous disposons d'un grand espace intérieur lumineux avec différents coins d'activités (lecture, arts plastiques, jeux de construction) ainsi qu'un jardin sécurisé pour les activités de plein air.",
+      descriptionStructure:
+        "Maison de 120m2 avec un grand espace intérieur lumineux comprenant différents coins d'activités (lecture, arts plastiques, jeux de construction). Jardin sécurisé et clôturé de 80m2 pour les activités de plein air, situé au cœur de Lyon à proximité du parc de la Tête d'Or.",
+      descriptionPedagogique:
+        "Notre projet pédagogique s'inspire de la méthode Montessori et favorise l'autonomie, la découverte sensorielle et le respect du rythme de chaque enfant. Nous proposons des ateliers d'éveil, de motricité libre et d'exploration artistique adaptés à chaque tranche d'âge.",
       address: "15 rue des Lilas",
       city: "Lyon",
       postalCode: "69003",
@@ -66,8 +68,10 @@ export async function seedDatabase() {
       slug: "la-maison-des-bambins",
       email: "bonjour@maison-bambins.fr",
       phone: "01 45 67 89 01",
-      description:
-        "La Maison des Bambins est un lieu d'accueil convivial où chaque enfant est accompagné avec douceur et attention. Située dans le 15ème arrondissement de Paris, notre MAM offre un environnement sécurisant et stimulant.\n\nNous proposons des activités variées : éveil musical, peinture, yoga enfants, lecture de contes, et sorties au parc voisin. Les repas sont préparés sur place avec des produits frais et bio.",
+      descriptionStructure:
+        "Appartement de 150m2 au rez-de-chaussée avec accès direct sur un jardin privatif de 60m2. Situé dans le 15ème arrondissement de Paris, à proximité du parc André Citroën. Cuisine équipée pour la préparation des repas sur place avec des produits frais et bio.",
+      descriptionPedagogique:
+        "Notre pédagogie est centrée sur l'éveil et l'épanouissement de chaque enfant. Nous proposons des activités variées : éveil musical, peinture, yoga enfants, lecture de contes et sorties au parc voisin. Chaque enfant est accompagné avec douceur et attention dans un environnement sécurisant et stimulant.",
       address: "42 avenue Victor Hugo",
       city: "Paris",
       postalCode: "75015",
@@ -113,8 +117,10 @@ export async function seedDatabase() {
       slug: "les-coccinelles-joyeuses",
       email: "info@coccinelles-joyeuses.fr",
       phone: "04 91 23 45 67",
-      description:
-        "Bienvenue aux Coccinelles Joyeuses ! Notre MAM est un véritable cocon de douceur au cœur de Marseille. Nous accueillons vos enfants dans un cadre coloré et joyeux, propice à l'éveil et au développement.\n\nNotre équipe met l'accent sur la motricité libre, les jeux sensoriels et la découverte de la nature. Un grand jardin ensoleillé permet aux enfants de profiter du plein air toute l'année.",
+      descriptionStructure:
+        "Maison de plain-pied de 100m2 avec un grand jardin ensoleillé de 120m2 au cœur de Marseille. Espaces intérieurs colorés et joyeux, propices à l'éveil et au développement. Coin repos aménagé avec lits adaptés à chaque âge.",
+      descriptionPedagogique:
+        "Notre équipe met l'accent sur la motricité libre, les jeux sensoriels et la découverte de la nature. Les enfants profitent du plein air toute l'année grâce à notre jardin. Nous favorisons l'autonomie et la socialisation à travers des activités ludiques et créatives.",
       address: "8 boulevard de la Canebière",
       city: "Marseille",
       postalCode: "13001",

@@ -162,9 +162,9 @@ export async function registerRoutes(
       const updateData: Record<string, unknown> = {};
 
       const allowedFields = [
-        "name", "email", "phone", "description", "address", "city",
-        "postalCode", "capacity", "ageMin", "ageMax", "openingHours",
-        "services", "photos", "staffMembers", "coverPhoto",
+        "name", "email", "phone", "descriptionStructure", "descriptionPedagogique",
+        "address", "city", "postalCode", "capacity", "ageMin", "ageMax",
+        "openingHours", "services", "photos", "staffMembers", "coverPhoto",
       ];
 
       for (const field of allowedFields) {
