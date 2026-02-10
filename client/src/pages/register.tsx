@@ -15,9 +15,11 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { registerMamSchema } from "@shared/schema";
+import { registerMamSchema, getDefaultOpeningHours, DAYS_OF_WEEK } from "@shared/schema";
+import type { DaySchedule } from "@shared/schema";
 import { Checkbox } from "@/components/ui/checkbox";
-import { UserPlus, X, Plus, Check } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { UserPlus, X, Plus, Check, Clock } from "lucide-react";
 import { z } from "zod";
 import { useState } from "react";
 
@@ -59,7 +61,7 @@ export default function Register() {
       capacity: 4,
       ageMin: 0,
       ageMax: 3,
-      openingHours: "Lundi - Vendredi : 7h30 - 18h30",
+      openingHours: getDefaultOpeningHours(),
       services: [],
       password: "",
     },
@@ -342,19 +344,63 @@ export default function Register() {
                   </div>
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="openingHours"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Horaires d'ouverture *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Lundi - Vendredi : 7h30 - 18h30" {...field} data-testid="input-hours" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div>
+                  <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Horaires d'ouverture *
+                  </p>
+                  <div className="space-y-2">
+                    {DAYS_OF_WEEK.map((day, index) => {
+                      const hours = form.watch("openingHours") || getDefaultOpeningHours();
+                      const daySchedule = hours[index];
+                      return (
+                        <div key={day} className="flex flex-wrap items-center gap-3 rounded-md border p-3" data-testid={`schedule-day-${day}`}>
+                          <div className="flex items-center gap-2 w-28">
+                            <Switch
+                              checked={daySchedule?.open ?? false}
+                              onCheckedChange={(checked) => {
+                                const updated = [...hours];
+                                updated[index] = { ...updated[index], open: checked };
+                                form.setValue("openingHours", updated, { shouldValidate: true });
+                              }}
+                              data-testid={`switch-day-${day}`}
+                            />
+                            <span className="text-sm font-medium">{day}</span>
+                          </div>
+                          {daySchedule?.open ? (
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="time"
+                                value={daySchedule.start}
+                                onChange={(e) => {
+                                  const updated = [...hours];
+                                  updated[index] = { ...updated[index], start: e.target.value };
+                                  form.setValue("openingHours", updated, { shouldValidate: true });
+                                }}
+                                className="w-28"
+                                data-testid={`input-start-${day}`}
+                              />
+                              <span className="text-sm text-muted-foreground">à</span>
+                              <Input
+                                type="time"
+                                value={daySchedule.end}
+                                onChange={(e) => {
+                                  const updated = [...hours];
+                                  updated[index] = { ...updated[index], end: e.target.value };
+                                  form.setValue("openingHours", updated, { shouldValidate: true });
+                                }}
+                                className="w-28"
+                                data-testid={`input-end-${day}`}
+                              />
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">Fermé</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 <FormField
                   control={form.control}

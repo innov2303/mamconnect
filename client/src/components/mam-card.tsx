@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Users, Clock, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Mam } from "@shared/schema";
+import type { Mam, DaySchedule } from "@shared/schema";
 
 interface MamCardProps {
   mam: Mam;
@@ -40,11 +40,20 @@ export function MamCard({ mam }: MamCardProps) {
 
         <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
           <Clock className="h-3.5 w-3.5 flex-shrink-0" />
-          <span className="line-clamp-1">{mam.openingHours}</span>
+          <span className="line-clamp-1">
+            {(() => {
+              const hours = Array.isArray(mam.openingHours) ? (mam.openingHours as DaySchedule[]) : [];
+              const openDays = hours.filter((d) => d.open);
+              if (openDays.length === 0) return "Horaires non définis";
+              const allSame = openDays.every((d) => d.start === openDays[0].start && d.end === openDays[0].end);
+              if (allSame) return `${openDays[0].day.slice(0, 3)}-${openDays[openDays.length - 1].day.slice(0, 3)} : ${openDays[0].start} - ${openDays[0].end}`;
+              return `${openDays.length}j/sem`;
+            })()}
+          </span>
         </div>
 
         <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-          {mam.description}
+          {mam.descriptionStructure}
         </p>
 
         {mam.services && mam.services.length > 0 && (

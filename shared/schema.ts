@@ -3,6 +3,36 @@ import { pgTable, text, varchar, integer, boolean, timestamp, jsonb } from "driz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+export const DAYS_OF_WEEK = [
+  "Lundi",
+  "Mardi",
+  "Mercredi",
+  "Jeudi",
+  "Vendredi",
+  "Samedi",
+  "Dimanche",
+] as const;
+
+export const dayScheduleSchema = z.object({
+  day: z.string(),
+  open: z.boolean(),
+  start: z.string().default("07:30"),
+  end: z.string().default("18:30"),
+});
+
+export type DaySchedule = z.infer<typeof dayScheduleSchema>;
+
+export const openingHoursSchema = z.array(dayScheduleSchema).min(7).max(7);
+
+export function getDefaultOpeningHours(): DaySchedule[] {
+  return DAYS_OF_WEEK.map((day) => ({
+    day,
+    open: day !== "Samedi" && day !== "Dimanche",
+    start: "07:30",
+    end: "18:30",
+  }));
+}
+
 export const staffMemberSchema = z.object({
   name: z.string().min(1),
   role: z.string().min(1),
@@ -34,7 +64,7 @@ export const mams = pgTable("mams", {
   capacity: integer("capacity").notNull(),
   ageMin: integer("age_min").notNull().default(0),
   ageMax: integer("age_max").notNull().default(6),
-  openingHours: text("opening_hours").notNull(),
+  openingHours: jsonb("opening_hours").notNull().default(sql`'[]'::jsonb`),
   services: text("services").array().notNull().default(sql`'{}'::text[]`),
   photos: text("photos").array().notNull().default(sql`'{}'::text[]`),
   staffMembers: jsonb("staff_members").notNull().default(sql`'[]'::jsonb`),
@@ -66,7 +96,7 @@ export const registerMamSchema = z.object({
   capacity: z.coerce.number().min(1, "Capacité minimum de 1").max(20, "Capacité maximum de 20"),
   ageMin: z.coerce.number().min(0).max(6),
   ageMax: z.coerce.number().min(0).max(6),
-  openingHours: z.string().min(5, "Horaires requis"),
+  openingHours: openingHoursSchema,
   services: z.array(z.string()).default([]),
   password: z.string()
     .min(8, "Le mot de passe doit contenir au moins 8 caractères")

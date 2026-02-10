@@ -331,8 +331,18 @@ function MamManagement() {
                     <p>{selectedMam.address}</p>
                   </div>
                   <div className="col-span-2">
-                    <p className="text-muted-foreground text-xs">Horaires</p>
-                    <p>{selectedMam.openingHours}</p>
+                    <p className="text-muted-foreground text-xs mb-1">Horaires</p>
+                    {Array.isArray(selectedMam.openingHours) ? (
+                      <div className="space-y-0.5">
+                        {(selectedMam.openingHours as any[]).map((d: any) => (
+                          <p key={d.day} className="text-sm">
+                            <span className="font-medium">{d.day}</span> : {d.open ? `${d.start} - ${d.end}` : "Fermé"}
+                          </p>
+                        ))}
+                      </div>
+                    ) : (
+                      <p>{String(selectedMam.openingHours)}</p>
+                    )}
                   </div>
                 </div>
                 <div>

@@ -10,7 +10,7 @@ import {
   MapPin, Phone, Mail, Clock, Users, Baby, ArrowLeft,
   Pencil, AlertCircle, LayoutDashboard, CalendarCheck
 } from "lucide-react";
-import type { Mam, StaffMember, AvailableSpot } from "@shared/schema";
+import type { Mam, StaffMember, AvailableSpot, DaySchedule } from "@shared/schema";
 import { useState } from "react";
 
 function PhotoGallery({ photos, name }: { photos: string[]; name: string }) {
@@ -234,7 +234,16 @@ export default function MamProfile() {
                 </Badge>
                 <Badge variant="secondary">
                   <Clock className="h-3 w-3 mr-1" />
-                  {mam.openingHours}
+                  {(() => {
+                    const hours = Array.isArray(mam.openingHours) ? (mam.openingHours as DaySchedule[]) : [];
+                    const openDays = hours.filter((d) => d.open);
+                    if (openDays.length === 0) return "Horaires non définis";
+                    const allSame = openDays.every((d) => d.start === openDays[0].start && d.end === openDays[0].end);
+                    if (allSame && openDays.length > 0) {
+                      return `${openDays[0].start} - ${openDays[0].end}`;
+                    }
+                    return `${openDays.length}j/sem`;
+                  })()}
                 </Badge>
               </div>
             </div>
@@ -360,9 +369,19 @@ export default function MamProfile() {
             <Card>
               <CardContent className="p-5 space-y-3">
                 <h3 className="font-semibold">Horaires</h3>
-                <div className="flex items-start gap-3 text-sm">
-                  <Clock className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <span className="text-muted-foreground whitespace-pre-line">{mam.openingHours}</span>
+                <div className="space-y-1.5 text-sm">
+                  {Array.isArray(mam.openingHours) ? (mam.openingHours as DaySchedule[]).map((d) => (
+                    <div key={d.day} className="flex items-center justify-between" data-testid={`text-hours-${d.day}`}>
+                      <span className="font-medium">{d.day}</span>
+                      {d.open ? (
+                        <span className="text-muted-foreground">{d.start} - {d.end}</span>
+                      ) : (
+                        <span className="text-muted-foreground">Fermé</span>
+                      )}
+                    </div>
+                  )) : (
+                    <p className="text-muted-foreground">{String(mam.openingHours)}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>

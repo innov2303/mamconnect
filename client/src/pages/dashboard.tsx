@@ -24,7 +24,9 @@ import {
   MessageSquare, Send, AlertCircle, Clock, Upload, Camera, CalendarPlus, Calendar,
   Link2, Copy
 } from "lucide-react";
-import type { Mam, StaffMember, AvailableSpot, Ticket } from "@shared/schema";
+import type { Mam, StaffMember, AvailableSpot, Ticket, DaySchedule } from "@shared/schema";
+import { getDefaultOpeningHours, DAYS_OF_WEEK, openingHoursSchema } from "@shared/schema";
+import { Switch } from "@/components/ui/switch";
 import { z } from "zod";
 import { useState, useEffect } from "react";
 
@@ -46,7 +48,7 @@ const editMamSchema = z.object({
   capacity: z.number().min(1).max(20),
   ageMin: z.number().min(0).max(6),
   ageMax: z.number().min(0).max(6),
-  openingHours: z.string().min(5),
+  openingHours: openingHoursSchema,
 });
 
 type EditFormValues = z.infer<typeof editMamSchema>;
@@ -640,12 +642,15 @@ export default function Dashboard() {
       capacity: 4,
       ageMin: 0,
       ageMax: 3,
-      openingHours: "",
+      openingHours: getDefaultOpeningHours(),
     },
   });
 
   useEffect(() => {
     if (mam) {
+      const parsedHours = Array.isArray(mam.openingHours)
+        ? (mam.openingHours as DaySchedule[])
+        : getDefaultOpeningHours();
       form.reset({
         name: mam.name,
         email: mam.email,
@@ -658,7 +663,7 @@ export default function Dashboard() {
         capacity: mam.capacity,
         ageMin: mam.ageMin,
         ageMax: mam.ageMax,
-        openingHours: mam.openingHours,
+        openingHours: parsedHours,
       });
       setSelectedServices(mam.services || []);
       setStaffMembers(
@@ -1044,19 +1049,63 @@ export default function Dashboard() {
                       />
                     </div>
 
-                    <FormField
-                      control={form.control}
-                      name="openingHours"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Horaires</FormLabel>
-                          <FormControl>
-                            <Input {...field} data-testid="input-edit-hours" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div>
+                      <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        Horaires d'ouverture
+                      </p>
+                      <div className="space-y-2">
+                        {DAYS_OF_WEEK.map((day, index) => {
+                          const hours = form.watch("openingHours") || getDefaultOpeningHours();
+                          const daySchedule = hours[index];
+                          return (
+                            <div key={day} className="flex flex-wrap items-center gap-3 rounded-md border p-3" data-testid={`edit-schedule-day-${day}`}>
+                              <div className="flex items-center gap-2 w-28">
+                                <Switch
+                                  checked={daySchedule?.open ?? false}
+                                  onCheckedChange={(checked) => {
+                                    const updated = [...hours];
+                                    updated[index] = { ...updated[index], open: checked };
+                                    form.setValue("openingHours", updated, { shouldValidate: true });
+                                  }}
+                                  data-testid={`edit-switch-day-${day}`}
+                                />
+                                <span className="text-sm font-medium">{day}</span>
+                              </div>
+                              {daySchedule?.open ? (
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    type="time"
+                                    value={daySchedule.start}
+                                    onChange={(e) => {
+                                      const updated = [...hours];
+                                      updated[index] = { ...updated[index], start: e.target.value };
+                                      form.setValue("openingHours", updated, { shouldValidate: true });
+                                    }}
+                                    className="w-28"
+                                    data-testid={`edit-input-start-${day}`}
+                                  />
+                                  <span className="text-sm text-muted-foreground">à</span>
+                                  <Input
+                                    type="time"
+                                    value={daySchedule.end}
+                                    onChange={(e) => {
+                                      const updated = [...hours];
+                                      updated[index] = { ...updated[index], end: e.target.value };
+                                      form.setValue("openingHours", updated, { shouldValidate: true });
+                                    }}
+                                    className="w-28"
+                                    data-testid={`edit-input-end-${day}`}
+                                  />
+                                </div>
+                              ) : (
+                                <span className="text-sm text-muted-foreground">Fermé</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
 
                     <FormField
                       control={form.control}
