@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMamAuth } from "@/lib/mam-auth";
 import {
-  MapPin, Phone, Mail, Clock, Users, Baby, ArrowLeft, ChevronLeft, ChevronRight,
+  MapPin, Phone, Mail, Clock, Users, Baby, ArrowLeft,
   Pencil, AlertCircle, LayoutDashboard
 } from "lucide-react";
 import type { Mam, StaffMember } from "@shared/schema";
@@ -29,28 +29,6 @@ function PhotoGallery({ photos, name }: { photos: string[]; name: string }) {
           decoding="async"
           data-testid="img-gallery-main"
         />
-        {photos.length > 1 && (
-          <>
-            <Button
-              size="icon"
-              variant="secondary"
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm"
-              onClick={() => setActiveIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1))}
-              data-testid="button-gallery-prev"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              size="icon"
-              variant="secondary"
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm"
-              onClick={() => setActiveIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1))}
-              data-testid="button-gallery-next"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </>
-        )}
       </div>
       {photos.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-1">
