@@ -1,4 +1,4 @@
-import { type Mam, type InsertMam, type Admin, type InsertAdmin, type Ticket, type InsertTicket, mams, admins, tickets } from "@shared/schema";
+import { type Mam, type InsertMam, type Admin, type InsertAdmin, type Ticket, type InsertTicket, type Parent, type InsertParent, type ParentNotification, type InsertParentNotification, mams, admins, tickets, parents, parentNotifications } from "@shared/schema";
 import { db } from "./db";
 import { eq, ilike, or, and, desc } from "drizzle-orm";
 
@@ -22,6 +22,15 @@ export interface IStorage {
   getTicketById(id: string): Promise<Ticket | undefined>;
   createTicket(ticket: InsertTicket): Promise<Ticket>;
   updateTicket(id: string, data: Partial<Ticket>): Promise<Ticket | undefined>;
+
+  getParentByEmail(email: string): Promise<Parent | undefined>;
+  createParent(parent: InsertParent & { latitude?: string | null; longitude?: string | null }): Promise<Parent>;
+  getAllParents(): Promise<Parent[]>;
+  getParentById(id: string): Promise<Parent | undefined>;
+
+  createNotification(notification: InsertParentNotification): Promise<ParentNotification>;
+  getNotificationsByParentId(parentId: string): Promise<ParentNotification[]>;
+  markNotificationRead(id: string): Promise<ParentNotification | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -119,6 +128,39 @@ export class DatabaseStorage implements IStorage {
   async updateTicket(id: string, data: Partial<Ticket>): Promise<Ticket | undefined> {
     const [ticket] = await db.update(tickets).set({ ...data, updatedAt: new Date() }).where(eq(tickets.id, id)).returning();
     return ticket;
+  }
+
+  async getParentByEmail(email: string): Promise<Parent | undefined> {
+    const [parent] = await db.select().from(parents).where(eq(parents.email, email));
+    return parent;
+  }
+
+  async createParent(parentData: InsertParent & { latitude?: string | null; longitude?: string | null }): Promise<Parent> {
+    const [parent] = await db.insert(parents).values(parentData).returning();
+    return parent;
+  }
+
+  async getAllParents(): Promise<Parent[]> {
+    return db.select().from(parents).where(eq(parents.notificationsEnabled, true));
+  }
+
+  async getParentById(id: string): Promise<Parent | undefined> {
+    const [parent] = await db.select().from(parents).where(eq(parents.id, id));
+    return parent;
+  }
+
+  async createNotification(notifData: InsertParentNotification): Promise<ParentNotification> {
+    const [notif] = await db.insert(parentNotifications).values(notifData).returning();
+    return notif;
+  }
+
+  async getNotificationsByParentId(parentId: string): Promise<ParentNotification[]> {
+    return db.select().from(parentNotifications).where(eq(parentNotifications.parentId, parentId)).orderBy(desc(parentNotifications.createdAt));
+  }
+
+  async markNotificationRead(id: string): Promise<ParentNotification | undefined> {
+    const [notif] = await db.update(parentNotifications).set({ read: true }).where(eq(parentNotifications.id, id)).returning();
+    return notif;
   }
 }
 

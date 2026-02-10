@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { registerMamSchema, loginMamSchema, loginAdminSchema, createTicketSchema } from "@shared/schema";
+import { registerMamSchema, loginMamSchema, loginAdminSchema, createTicketSchema, registerParentSchema } from "@shared/schema";
 import { fromError } from "zod-validation-error";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
@@ -9,6 +9,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import sharp from "sharp";
+import { geocodeAddress, haversineDistance } from "./geocoding";
 
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -199,6 +200,8 @@ export async function registerRoutes(
 
       const hashedPassword = await bcrypt.hash(result.data.password, SALT_ROUNDS);
 
+      const geo = await geocodeAddress(result.data.address, result.data.city, result.data.postalCode);
+
       const mamData = {
         ...result.data,
         password: hashedPassword,
@@ -208,6 +211,8 @@ export async function registerRoutes(
         coverPhoto: null,
         published: false,
         status: "pending",
+        latitude: geo?.latitude || null,
+        longitude: geo?.longitude || null,
       };
 
       const mam = await storage.createMam(mamData);
@@ -301,9 +306,25 @@ export async function registerRoutes(
         updateData.password = await bcrypt.hash(req.body.newPassword, SALT_ROUNDS);
       }
 
+      if (updateData.address || updateData.city || updateData.postalCode) {
+        const addr = (updateData.address as string) || mam.address;
+        const cty = (updateData.city as string) || mam.city;
+        const pc = (updateData.postalCode as string) || mam.postalCode;
+        const geo = await geocodeAddress(addr, cty, pc);
+        if (geo) {
+          updateData.latitude = geo.latitude;
+          updateData.longitude = geo.longitude;
+        }
+      }
+
+      const hadSpotsBefore = JSON.stringify(mam.availableSpots);
       const updatedMam = await storage.updateMam(id, updateData);
       if (!updatedMam) {
         return res.status(500).json({ message: "Erreur lors de la mise à jour" });
+      }
+
+      if (req.body.availableSpots && JSON.stringify(req.body.availableSpots) !== hadSpotsBefore) {
+        notifyMatchingParents(updatedMam).catch(err => console.error("Notification error:", err));
       }
 
       const { password, ...safeMam } = updatedMam;
@@ -483,5 +504,132 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/parents", async (req, res) => {
+    try {
+      const result = registerParentSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: fromError(result.error).message });
+      }
+
+      const existingParent = await storage.getParentByEmail(result.data.email);
+      if (existingParent) {
+        return res.status(400).json({ message: "Un compte parent existe déjà avec cet email" });
+      }
+
+      const geo = await geocodeAddress(result.data.address, result.data.city, result.data.postalCode);
+
+      const parent = await storage.createParent({
+        ...result.data,
+        latitude: geo?.latitude || null,
+        longitude: geo?.longitude || null,
+      });
+
+      res.status(201).json(parent);
+    } catch (error) {
+      console.error("Create parent error:", error);
+      res.status(500).json({ message: "Erreur lors de l'inscription" });
+    }
+  });
+
+  app.get("/api/parents/:id/notifications", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const parent = await storage.getParentById(id);
+      if (!parent) {
+        return res.status(404).json({ message: "Parent introuvable" });
+      }
+      const notifications = await storage.getNotificationsByParentId(id);
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors de la récupération des notifications" });
+    }
+  });
+
+  app.get("/api/admin/parents", adminAuth, async (_req, res) => {
+    try {
+      const allParents = await storage.getAllParents();
+      res.json(allParents);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors de la récupération des parents" });
+    }
+  });
+
   return httpServer;
+}
+
+async function notifyMatchingParents(mam: any) {
+  try {
+    if (!mam.latitude || !mam.longitude) return;
+
+    const spots = mam.availableSpots as any[];
+    if (!spots || spots.length === 0) return;
+
+    const allParents = await storage.getAllParents();
+    const mamLat = parseFloat(mam.latitude);
+    const mamLng = parseFloat(mam.longitude);
+
+    for (const parent of allParents) {
+      if (!parent.latitude || !parent.longitude) continue;
+
+      const parentLat = parseFloat(parent.latitude);
+      const parentLng = parseFloat(parent.longitude);
+      const distance = haversineDistance(parentLat, parentLng, mamLat, mamLng);
+
+      if (distance <= 30) {
+        const distanceText = distance < 1 ? "moins d'1 km" : `${Math.round(distance)} km`;
+        const spotSummary = spots.map(s => {
+          const date = new Date(s.availableFrom).toLocaleDateString("fr-FR");
+          return `${s.count} place(s) à partir du ${date}`;
+        }).join(", ");
+
+        await storage.createNotification({
+          parentId: parent.id,
+          mamId: mam.id,
+          message: `${mam.name} (à ${distanceText} de chez vous) a des places disponibles : ${spotSummary}`,
+          spotInfo: JSON.stringify(spots),
+          read: false,
+          emailSent: false,
+        });
+
+        try {
+          await sendParentNotificationEmail(parent, mam, distanceText, spotSummary);
+        } catch (emailError) {
+          console.error("Failed to send notification email:", emailError);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error notifying parents:", error);
+  }
+}
+
+async function sendParentNotificationEmail(parent: any, mam: any, distanceText: string, spotSummary: string) {
+  try {
+    const { getUncachableResendClient } = await import("./resend");
+    const { client, fromEmail } = await getUncachableResendClient();
+
+    await client.emails.send({
+      from: fromEmail || "Mam Connect <noreply@mamconnect.fr>",
+      to: parent.email,
+      subject: `Place disponible chez ${mam.name}`,
+      html: `
+        <div style="font-family: 'Helvetica', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #e11d6d;">Bonne nouvelle, ${parent.firstName} !</h2>
+          <p>Une MAM près de chez vous a des places disponibles :</p>
+          <div style="background: #fff5f7; border-radius: 8px; padding: 16px; margin: 16px 0;">
+            <h3 style="margin: 0 0 8px;">${mam.name}</h3>
+            <p style="margin: 4px 0; color: #666;">${mam.address}, ${mam.postalCode} ${mam.city}</p>
+            <p style="margin: 4px 0; color: #666;">Distance : ${distanceText}</p>
+            <p style="margin: 8px 0; font-weight: bold;">${spotSummary}</p>
+          </div>
+          <p>Contactez la MAM pour plus d'informations :</p>
+          <p>Téléphone : ${mam.phone}<br>Email : ${mam.email}</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+          <p style="font-size: 12px; color: #999;">Vous recevez cet email car vous êtes inscrit sur Mam Connect.</p>
+        </div>
+      `,
+    });
+  } catch (error) {
+    console.error("Email send error:", error);
+  }
 }

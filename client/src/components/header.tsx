@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useMamAuth } from "@/lib/mam-auth";
-import { Home, Search, UserPlus, LogIn, Menu, X, LogOut, LayoutDashboard, User } from "lucide-react";
+import { Home, Search, UserPlus, LogIn, Menu, X, LogOut, LayoutDashboard, User, Baby } from "lucide-react";
 import { useState } from "react";
 
 export function Header() {
@@ -20,6 +20,7 @@ export function Header() {
     : [
         { href: "/", label: "Accueil", icon: Home },
         { href: "/annuaire", label: "Annuaire", icon: Search },
+        { href: "/inscription-parent", label: "Inscription parent", icon: Baby },
         { href: "/inscription", label: "Inscrire ma MAM", icon: UserPlus },
         { href: "/connexion", label: "Connexion", icon: LogIn },
       ];

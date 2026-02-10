@@ -39,6 +39,8 @@ export const mams = pgTable("mams", {
   photos: text("photos").array().notNull().default(sql`'{}'::text[]`),
   staffMembers: jsonb("staff_members").notNull().default(sql`'[]'::jsonb`),
   availableSpots: jsonb("available_spots").notNull().default(sql`'[]'::jsonb`),
+  latitude: text("latitude"),
+  longitude: text("longitude"),
   coverPhoto: text("cover_photo"),
   published: boolean("published").notNull().default(false),
   status: text("status").notNull().default("pending"),
@@ -147,3 +149,64 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+export const parents = pgTable("parents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").notNull().unique(),
+  phone: text("phone").notNull(),
+  address: text("address").notNull(),
+  city: text("city").notNull(),
+  postalCode: text("postal_code").notNull(),
+  latitude: text("latitude"),
+  longitude: text("longitude"),
+  childBirthDate: text("child_birth_date").notNull(),
+  desiredStartDate: text("desired_start_date").notNull(),
+  notes: text("notes").default(""),
+  notificationsEnabled: boolean("notifications_enabled").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertParentSchema = createInsertSchema(parents).omit({
+  id: true,
+  createdAt: true,
+  latitude: true,
+  longitude: true,
+});
+
+export const registerParentSchema = z.object({
+  firstName: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
+  lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+  email: z.string().email("Email invalide"),
+  phone: z.string().min(10, "Numéro de téléphone invalide"),
+  address: z.string().min(5, "Adresse requise"),
+  city: z.string().min(2, "Ville requise"),
+  postalCode: z.string().regex(/^\d{5}$/, "Code postal invalide (5 chiffres)"),
+  childBirthDate: z.string().min(1, "Date de naissance de l'enfant requise"),
+  desiredStartDate: z.string().min(1, "Date souhaitée requise"),
+  notes: z.string().default(""),
+  notificationsEnabled: z.boolean().default(true),
+});
+
+export type InsertParent = z.infer<typeof insertParentSchema>;
+export type Parent = typeof parents.$inferSelect;
+
+export const parentNotifications = pgTable("parent_notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  parentId: varchar("parent_id").references(() => parents.id).notNull(),
+  mamId: varchar("mam_id").references(() => mams.id).notNull(),
+  message: text("message").notNull(),
+  spotInfo: text("spot_info"),
+  read: boolean("read").notNull().default(false),
+  emailSent: boolean("email_sent").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertNotificationSchema = createInsertSchema(parentNotifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertParentNotification = z.infer<typeof insertNotificationSchema>;
+export type ParentNotification = typeof parentNotifications.$inferSelect;

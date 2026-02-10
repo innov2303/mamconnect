@@ -15,6 +15,7 @@ import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import AdminLogin from "@/pages/admin-login";
 import AdminDashboard from "@/pages/admin-dashboard";
+import ParentRegister from "@/pages/parent-register";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/inscription" component={Register} />
       <Route path="/connexion" component={Login} />
       <Route path="/dashboard/:slug" component={Dashboard} />
+      <Route path="/inscription-parent" component={ParentRegister} />
       <Route path="/admin" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route component={NotFound} />
