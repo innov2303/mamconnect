@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   Eye, Save, X, Plus, Trash2, UserPlus, Image, Settings, Users, Lock, Check,
-  MessageSquare, Send, AlertCircle, Clock
+  MessageSquare, Send, AlertCircle, Clock, Upload
 } from "lucide-react";
 import type { Mam, StaffMember, Ticket } from "@shared/schema";
 import { z } from "zod";
@@ -147,12 +147,36 @@ function PhotoManager({
   photos: string[];
   onUpdate: (photos: string[]) => void;
 }) {
-  const [newUrl, setNewUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const { toast } = useToast();
 
-  const addPhoto = () => {
-    if (!newUrl.trim()) return;
-    onUpdate([...photos, newUrl.trim()]);
-    setNewUrl("");
+  const handleUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    const newPhotos: string[] = [];
+    for (const file of Array.from(files)) {
+      const formData = new FormData();
+      formData.append("photo", file);
+      try {
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.message || "Erreur lors de l'upload");
+        }
+        const data = await res.json();
+        newPhotos.push(data.url);
+      } catch (error: any) {
+        toast({
+          title: "Erreur",
+          description: error.message || "Impossible d'envoyer le fichier",
+          variant: "destructive",
+        });
+      }
+    }
+    if (newPhotos.length > 0) {
+      onUpdate([...photos, ...newPhotos]);
+    }
+    setUploading(false);
   };
 
   const removePhoto = (index: number) => {
@@ -181,17 +205,26 @@ function PhotoManager({
         </div>
       )}
 
-      <div className="flex gap-2">
-        <Input
-          placeholder="URL de l'image"
-          value={newUrl}
-          onChange={(e) => setNewUrl(e.target.value)}
-          data-testid="input-new-photo-url"
-        />
-        <Button variant="outline" className="gap-2 flex-shrink-0" onClick={addPhoto} disabled={!newUrl.trim()} data-testid="button-add-photo">
-          <Image className="h-4 w-4" />
-          Ajouter
-        </Button>
+      <div>
+        <label
+          className="flex flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed p-6 cursor-pointer transition-colors hover:border-primary/50 hover:bg-muted/50"
+          data-testid="label-upload-photo"
+        >
+          <Upload className="h-8 w-8 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">
+            {uploading ? "Envoi en cours..." : "Cliquez ou glissez vos photos ici"}
+          </span>
+          <span className="text-xs text-muted-foreground">JPG, PNG ou WebP (max 5 Mo)</span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            className="hidden"
+            onChange={(e) => handleUpload(e.target.files)}
+            disabled={uploading}
+            data-testid="input-upload-photo"
+          />
+        </label>
       </div>
     </div>
   );

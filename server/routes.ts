@@ -5,6 +5,30 @@ import { registerMamSchema, loginMamSchema, loginAdminSchema, createTicketSchema
 import { fromError } from "zod-validation-error";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+const uploadDir = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, uploadDir),
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname);
+      cb(null, `${crypto.randomBytes(16).toString("hex")}${ext}`);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [".jpg", ".jpeg", ".png", ".webp"];
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, allowed.includes(ext));
+  },
+});
 
 const SALT_ROUNDS = 12;
 
@@ -43,6 +67,16 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  app.use("/uploads", (await import("express")).default.static(uploadDir));
+
+  app.post("/api/upload", upload.single("photo"), (req: Request, res: Response) => {
+    if (!req.file) {
+      return res.status(400).json({ message: "Aucun fichier envoyé ou format non supporté (jpg, png, webp)" });
+    }
+    const url = `/uploads/${req.file.filename}`;
+    res.json({ url });
+  });
 
   app.get("/api/mams", async (_req, res) => {
     try {
