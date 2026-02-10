@@ -101,7 +101,7 @@ function ContactDialog() {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Décrivez votre demande..."
-              rows={4}
+              rows={8}
               required
               data-testid="input-contact-message"
             />
