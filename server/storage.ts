@@ -142,7 +142,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllParents(): Promise<Parent[]> {
-    return db.select().from(parents).where(eq(parents.notificationsEnabled, true));
+    return db.select().from(parents).where(
+      and(eq(parents.notificationsEnabled, true), eq(parents.searchActive, true))
+    );
   }
 
   async getParentById(id: string): Promise<Parent | undefined> {
