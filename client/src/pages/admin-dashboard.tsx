@@ -336,15 +336,50 @@ function MamManagement() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-xs mb-1">Description</p>
-                  <p className="text-sm whitespace-pre-wrap">{selectedMam.description}</p>
+                  <p className="text-muted-foreground text-xs mb-1">Description de la structure</p>
+                  <p className="text-sm whitespace-pre-wrap">{selectedMam.descriptionStructure}</p>
                 </div>
+                {selectedMam.descriptionPedagogique && (
+                  <div>
+                    <p className="text-muted-foreground text-xs mb-1">Projet pédagogique</p>
+                    <p className="text-sm whitespace-pre-wrap">{selectedMam.descriptionPedagogique}</p>
+                  </div>
+                )}
                 {selectedMam.services.length > 0 && (
                   <div>
                     <p className="text-muted-foreground text-xs mb-1">Services</p>
                     <div className="flex flex-wrap gap-1">
-                      {selectedMam.services.map((s) => (
+                      {selectedMam.services.map((s: string) => (
                         <Badge key={s} variant="outline">{s}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {selectedMam.staffMembers && (selectedMam.staffMembers as any[]).length > 0 && (
+                  <div>
+                    <p className="text-muted-foreground text-xs mb-1">Équipe</p>
+                    <div className="space-y-1">
+                      {(selectedMam.staffMembers as any[]).map((member: any, i: number) => (
+                        <p key={i} className="text-sm">
+                          <span className="font-medium">{member.name}</span> — {member.role}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {selectedMam.photos && selectedMam.photos.length > 0 && (
+                  <div>
+                    <p className="text-muted-foreground text-xs mb-1">Photos ({selectedMam.photos.length})</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {selectedMam.photos.map((photo: string, i: number) => (
+                        <a key={i} href={photo} target="_blank" rel="noopener noreferrer">
+                          <img
+                            src={photo}
+                            alt={`Photo ${i + 1}`}
+                            className="w-full h-20 object-cover rounded-md border"
+                            data-testid={`img-mam-photo-${i}`}
+                          />
+                        </a>
                       ))}
                     </div>
                   </div>
