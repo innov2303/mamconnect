@@ -37,8 +37,8 @@ const editParentSchema = z.object({
 
 type EditParentValues = z.infer<typeof editParentSchema>;
 
-const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, "Mot de passe actuel requis"),
+const resetPasswordSchema = z.object({
+  code: z.string().length(6, "Le code doit contenir 6 chiffres"),
   newPassword: z.string()
     .min(8, "Le mot de passe doit contenir au moins 8 caractères")
     .regex(/[A-Z]/, "Le mot de passe doit contenir au moins une majuscule")
@@ -51,7 +51,7 @@ const changePasswordSchema = z.object({
   path: ["confirmPassword"],
 });
 
-type ChangePasswordValues = z.infer<typeof changePasswordSchema>;
+type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
 
 interface ParentData {
   id: string;
@@ -218,30 +218,51 @@ export default function ParentDashboard() {
     },
   });
 
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [passwordStep, setPasswordStep] = useState<"request" | "verify" | "success">("request");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const passwordForm = useForm<ChangePasswordValues>({
-    resolver: zodResolver(changePasswordSchema),
+  const resetForm = useForm<ResetPasswordValues>({
+    resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
-      currentPassword: "",
+      code: "",
       newPassword: "",
       confirmPassword: "",
     },
   });
 
-  const changePasswordMutation = useMutation({
-    mutationFn: async (data: ChangePasswordValues) => {
-      const res = await fetch("/api/parents/me/password", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+  const sendCodeMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: parentData?.email, type: "parent" }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Erreur");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setPasswordStep("verify");
+      toast({ title: "Code envoyé", description: "Un code de vérification a été envoyé à votre adresse email." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (data: ResetPasswordValues) => {
+      const res = await fetch("/api/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          currentPassword: data.currentPassword,
+          email: parentData?.email,
+          code: data.code,
           newPassword: data.newPassword,
+          type: "parent",
         }),
       });
       if (!res.ok) {
@@ -251,11 +272,11 @@ export default function ParentDashboard() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Mot de passe modifié", description: "Votre mot de passe a été mis à jour avec succès." });
-      passwordForm.reset();
-      setShowCurrentPassword(false);
+      setPasswordStep("success");
+      resetForm.reset();
       setShowNewPassword(false);
       setShowConfirmPassword(false);
+      toast({ title: "Mot de passe modifié", description: "Votre mot de passe a été mis à jour avec succès." });
     },
     onError: (error: Error) => {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
@@ -266,8 +287,8 @@ export default function ParentDashboard() {
     updateMutation.mutate(data);
   };
 
-  const onPasswordSubmit = (data: ChangePasswordValues) => {
-    changePasswordMutation.mutate(data);
+  const onResetPasswordSubmit = (data: ResetPasswordValues) => {
+    resetPasswordMutation.mutate(data);
   };
 
   const handleLogout = () => {
@@ -603,101 +624,149 @@ export default function ParentDashboard() {
                 <Shield className="w-5 h-5 text-primary" />
                 Changer le mot de passe
               </h3>
-              <Form {...passwordForm}>
-                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4 max-w-md">
-                  <FormField
-                    control={passwordForm.control}
-                    name="currentPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Mot de passe actuel</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Input
-                              type={showCurrentPassword ? "text" : "password"}
-                              placeholder="Votre mot de passe actuel"
-                              className="pr-10"
-                              {...field}
-                              data-testid="input-current-password"
-                            />
-                            <span
-                              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground"
-                              onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                              data-testid="toggle-current-password"
-                            >
-                              {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                            </span>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={passwordForm.control}
-                    name="newPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nouveau mot de passe</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Input
-                              type={showNewPassword ? "text" : "password"}
-                              placeholder="Votre nouveau mot de passe"
-                              className="pr-10"
-                              {...field}
-                              data-testid="input-new-password"
-                            />
-                            <span
-                              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground"
-                              onClick={() => setShowNewPassword(!showNewPassword)}
-                              data-testid="toggle-new-password"
-                            >
-                              {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                            </span>
-                          </div>
-                        </FormControl>
-                        <FormDescription>
-                          8 caractères minimum, une majuscule, une minuscule, un chiffre et un caractère spécial
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={passwordForm.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Confirmer le nouveau mot de passe</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Input
-                              type={showConfirmPassword ? "text" : "password"}
-                              placeholder="Confirmez le nouveau mot de passe"
-                              className="pr-10"
-                              {...field}
-                              data-testid="input-confirm-password"
-                            />
-                            <span
-                              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground"
-                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                              data-testid="toggle-confirm-password"
-                            >
-                              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                            </span>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" disabled={changePasswordMutation.isPending} data-testid="button-change-password">
-                    <Save className="w-4 h-4 mr-2" />
-                    {changePasswordMutation.isPending ? "Modification..." : "Modifier le mot de passe"}
+
+              {passwordStep === "request" && (
+                <div className="space-y-4 max-w-md">
+                  <p className="text-sm text-muted-foreground">
+                    Pour modifier votre mot de passe, un code de vérification sera envoyé à votre adresse email <span className="font-medium text-foreground">{parentData?.email}</span>.
+                  </p>
+                  <Button
+                    onClick={() => sendCodeMutation.mutate()}
+                    disabled={sendCodeMutation.isPending}
+                    data-testid="button-send-code"
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    {sendCodeMutation.isPending ? "Envoi en cours..." : "Envoyer un code de vérification"}
                   </Button>
-                </form>
-              </Form>
+                </div>
+              )}
+
+              {passwordStep === "verify" && (
+                <Form {...resetForm}>
+                  <form onSubmit={resetForm.handleSubmit(onResetPasswordSubmit)} className="space-y-4 max-w-md">
+                    <div className="rounded-md bg-green-50 dark:bg-green-900/20 p-3 flex items-start gap-2 mb-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+                      <p className="text-sm text-green-700 dark:text-green-300">
+                        Un code de vérification a été envoyé à <span className="font-medium">{parentData?.email}</span>.
+                      </p>
+                    </div>
+                    <FormField
+                      control={resetForm.control}
+                      name="code"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Code de vérification</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="123456"
+                              maxLength={6}
+                              className="text-center text-lg tracking-widest max-w-[200px]"
+                              {...field}
+                              data-testid="input-reset-code"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={resetForm.control}
+                      name="newPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nouveau mot de passe</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                type={showNewPassword ? "text" : "password"}
+                                placeholder="Votre nouveau mot de passe"
+                                className="pr-10"
+                                {...field}
+                                data-testid="input-new-password"
+                              />
+                              <span
+                                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground"
+                                onClick={() => setShowNewPassword(!showNewPassword)}
+                                data-testid="toggle-new-password"
+                              >
+                                {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </span>
+                            </div>
+                          </FormControl>
+                          <FormDescription>
+                            8 caractères minimum, une majuscule, une minuscule, un chiffre et un caractère spécial
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={resetForm.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Confirmer le nouveau mot de passe</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                type={showConfirmPassword ? "text" : "password"}
+                                placeholder="Confirmez le nouveau mot de passe"
+                                className="pr-10"
+                                {...field}
+                                data-testid="input-confirm-password"
+                              />
+                              <span
+                                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                data-testid="toggle-confirm-password"
+                              >
+                                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </span>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Button type="submit" disabled={resetPasswordMutation.isPending} data-testid="button-change-password">
+                        <Save className="w-4 h-4 mr-2" />
+                        {resetPasswordMutation.isPending ? "Modification..." : "Modifier le mot de passe"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => sendCodeMutation.mutate()}
+                        disabled={sendCodeMutation.isPending}
+                        data-testid="button-resend-code"
+                      >
+                        {sendCodeMutation.isPending ? "Envoi..." : "Renvoyer le code"}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              )}
+
+              {passwordStep === "success" && (
+                <div className="space-y-4 max-w-md">
+                  <div className="rounded-md bg-green-50 dark:bg-green-900/20 p-4 flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="font-medium text-green-700 dark:text-green-300">Mot de passe modifié avec succès</p>
+                      <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                        Votre nouveau mot de passe est maintenant actif.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setPasswordStep("request")}
+                    data-testid="button-reset-again"
+                  >
+                    Modifier à nouveau
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

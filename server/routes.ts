@@ -687,38 +687,6 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/parents/me/password", parentAuth, async (req, res) => {
-    try {
-      const parentId = (req as any).parentId;
-      const parent = await storage.getParentById(parentId);
-      if (!parent) {
-        return res.status(404).json({ message: "Parent introuvable" });
-      }
-
-      const { currentPassword, newPassword } = req.body;
-      if (!currentPassword || !newPassword) {
-        return res.status(400).json({ message: "Mot de passe actuel et nouveau mot de passe requis" });
-      }
-
-      const isValid = await bcrypt.compare(currentPassword, parent.password);
-      if (!isValid) {
-        return res.status(401).json({ message: "Mot de passe actuel incorrect" });
-      }
-
-      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
-      if (!passwordRegex.test(newPassword)) {
-        return res.status(400).json({ message: "Le nouveau mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial" });
-      }
-
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-      await storage.updateParent(parentId, { password: hashedPassword });
-      res.json({ message: "Mot de passe modifié avec succès" });
-    } catch (error) {
-      console.error("Change parent password error:", error);
-      res.status(500).json({ message: "Erreur lors du changement de mot de passe" });
-    }
-  });
-
   app.get("/api/parents/:id/notifications", async (req, res) => {
     try {
       const { id } = req.params;
