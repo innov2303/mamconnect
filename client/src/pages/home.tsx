@@ -129,7 +129,7 @@ function InscriptionSection() {
     { icon: Bell, label: "Notification dès qu'une place se libère" },
     { icon: MapPin, label: "Recherche dans un rayon de 30 km" },
     { icon: Search, label: "Accès à l'annuaire complet" },
-    { icon: Baby, label: "Critères adaptés à votre enfant" },
+    { icon: Baby, label: "Critères de recherche adaptés à votre enfant" },
   ];
 
   return (
