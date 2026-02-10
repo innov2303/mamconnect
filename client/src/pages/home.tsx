@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, MapPin, Users, Shield, ArrowRight, Baby, Clock, Bell } from "lucide-react";
+import { Search, MapPin, Users, Shield, ArrowRight, Baby, Clock, Bell, Globe } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { SEO } from "@/components/seo";
@@ -121,7 +121,7 @@ function InscriptionSection() {
   const mamServices = [
     { icon: Shield, label: "Profil personnalisé et vérifié" },
     { icon: MapPin, label: "Visibilité dans l'annuaire local" },
-    { icon: Users, label: "Page Web personnalisée de la structure" },
+    { icon: Globe, label: "Page Web personnalisée de la structure" },
     { icon: Clock, label: "Gestion des places disponibles" },
   ];
 
