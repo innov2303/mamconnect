@@ -72,6 +72,7 @@ function MamManagement() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedMam, setSelectedMam] = useState<Omit<Mam, "password"> | null>(null);
+  const [mamToDelete, setMamToDelete] = useState<Omit<Mam, "password"> | null>(null);
 
   const { data: mams = [], isLoading } = useQuery<Omit<Mam, "password">[]>({
     queryKey: ["/api/admin/mams"],
@@ -282,11 +283,7 @@ function MamManagement() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => {
-                        if (confirm("Êtes-vous sûr de vouloir supprimer cette MAM ?")) {
-                          deleteMutation.mutate(mam.id);
-                        }
-                      }}
+                      onClick={() => setMamToDelete(mam)}
                       data-testid={`button-delete-mam-${mam.id}`}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
@@ -385,6 +382,35 @@ function MamManagement() {
               </DialogFooter>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!mamToDelete} onOpenChange={() => setMamToDelete(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground" data-testid="text-delete-confirmation">
+            Voulez-vous vraiment supprimer la MAM <strong>{mamToDelete?.name}</strong> ? Cette action est irréversible.
+          </p>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setMamToDelete(null)} data-testid="button-cancel-delete">
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (mamToDelete) {
+                  deleteMutation.mutate(mamToDelete.id);
+                  setMamToDelete(null);
+                }
+              }}
+              data-testid="button-confirm-delete"
+            >
+              <Trash2 className="h-4 w-4" />
+              Supprimer
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

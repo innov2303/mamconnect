@@ -59,6 +59,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteMam(id: string): Promise<boolean> {
+    await db.delete(tickets).where(eq(tickets.mamId, id));
     const result = await db.delete(mams).where(eq(mams.id, id)).returning();
     return result.length > 0;
   }
