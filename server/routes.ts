@@ -91,9 +91,9 @@ export async function registerRoutes(
       const outputPath = path.join(uploadDir, filename);
 
       await sharp(req.file.buffer)
-        .resize(1920, 1080, { fit: "inside", withoutEnlargement: true })
-        .sharpen()
-        .webp({ quality: 85 })
+        .resize(1920, 1440, { fit: "inside", withoutEnlargement: true })
+        .sharpen({ sigma: 1.5 })
+        .webp({ quality: 92, effort: 6 })
         .toFile(outputPath);
 
       res.json({ url: `/uploads/${filename}` });
