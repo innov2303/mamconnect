@@ -284,7 +284,7 @@ export async function registerRoutes(
       const allowedFields = [
         "name", "email", "phone", "descriptionStructure", "descriptionPedagogique",
         "address", "city", "postalCode", "capacity", "ageMin", "ageMax",
-        "openingHours", "services", "photos", "staffMembers", "coverPhoto",
+        "openingHours", "services", "photos", "staffMembers", "availableSpots", "coverPhoto",
       ];
 
       for (const field of allowedFields) {

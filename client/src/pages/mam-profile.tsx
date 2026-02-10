@@ -8,9 +8,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useMamAuth } from "@/lib/mam-auth";
 import {
   MapPin, Phone, Mail, Clock, Users, Baby, ArrowLeft,
-  Pencil, AlertCircle, LayoutDashboard
+  Pencil, AlertCircle, LayoutDashboard, CalendarCheck
 } from "lucide-react";
-import type { Mam, StaffMember } from "@shared/schema";
+import type { Mam, StaffMember, AvailableSpot } from "@shared/schema";
 import { useState } from "react";
 
 function PhotoGallery({ photos, name }: { photos: string[]; name: string }) {
@@ -147,6 +147,10 @@ export default function MamProfile() {
     ? (mam.staffMembers as StaffMember[])
     : [];
 
+  const availableSpots: AvailableSpot[] = Array.isArray((mam as any).availableSpots)
+    ? ((mam as any).availableSpots as AvailableSpot[])
+    : [];
+
   const allPhotos = [
     ...(mam.coverPhoto ? [mam.coverPhoto] : []),
     ...(mam.photos || []),
@@ -271,6 +275,45 @@ export default function MamProfile() {
                   {staffMembers.map((member, i) => (
                     <StaffCard key={i} member={member} />
                   ))}
+                </div>
+              </div>
+            )}
+
+            {availableSpots.length > 0 && (
+              <div>
+                <h2 className="text-lg font-semibold mb-3">Places disponibles</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {availableSpots.map((spot, i) => {
+                    const isUpcoming = new Date(spot.availableFrom) >= new Date(new Date().toDateString());
+                    const formattedDate = new Date(spot.availableFrom).toLocaleDateString("fr-FR", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    });
+                    return (
+                      <Card key={i}>
+                        <CardContent className="p-4 flex items-start gap-3">
+                          <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <CalendarCheck className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-sm" data-testid={`text-spot-count-${i}`}>
+                              {spot.count} place{spot.count > 1 ? "s" : ""}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {isUpcoming ? "À partir du" : "Depuis le"} {formattedDate}
+                            </p>
+                            {spot.note && (
+                              <p className="text-xs text-muted-foreground mt-1">{spot.note}</p>
+                            )}
+                          </div>
+                          <Badge variant={isUpcoming ? "secondary" : "default"} className="ml-auto flex-shrink-0">
+                            {isUpcoming ? "À venir" : "Disponible"}
+                          </Badge>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
             )}

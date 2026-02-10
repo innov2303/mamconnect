@@ -12,6 +12,14 @@ export const staffMemberSchema = z.object({
 
 export type StaffMember = z.infer<typeof staffMemberSchema>;
 
+export const availableSpotSchema = z.object({
+  count: z.number().min(1),
+  availableFrom: z.string().min(1),
+  note: z.string().optional(),
+});
+
+export type AvailableSpot = z.infer<typeof availableSpotSchema>;
+
 export const mams = pgTable("mams", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
@@ -30,6 +38,7 @@ export const mams = pgTable("mams", {
   services: text("services").array().notNull().default(sql`'{}'::text[]`),
   photos: text("photos").array().notNull().default(sql`'{}'::text[]`),
   staffMembers: jsonb("staff_members").notNull().default(sql`'[]'::jsonb`),
+  availableSpots: jsonb("available_spots").notNull().default(sql`'[]'::jsonb`),
   coverPhoto: text("cover_photo"),
   published: boolean("published").notNull().default(false),
   status: text("status").notNull().default("pending"),

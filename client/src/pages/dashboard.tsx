@@ -21,9 +21,9 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   Eye, Save, X, Plus, Trash2, UserPlus, Image, Settings, Users, Lock, Check,
-  MessageSquare, Send, AlertCircle, Clock, Upload, Camera
+  MessageSquare, Send, AlertCircle, Clock, Upload, Camera, CalendarPlus, Calendar
 } from "lucide-react";
-import type { Mam, StaffMember, Ticket } from "@shared/schema";
+import type { Mam, StaffMember, AvailableSpot, Ticket } from "@shared/schema";
 import { z } from "zod";
 import { useState, useEffect } from "react";
 
@@ -38,7 +38,7 @@ const editMamSchema = z.object({
   email: z.string().email(),
   phone: z.string().min(10),
   descriptionStructure: z.string().min(20),
-  descriptionPedagogique: z.string().min(20),
+  descriptionPedagogique: z.string().default(""),
   address: z.string().min(5),
   city: z.string().min(2),
   postalCode: z.string().regex(/^\d{5}$/),
@@ -206,6 +206,145 @@ function StaffEditor({
             onClick={addMember}
             disabled={!newName.trim() || !newRole.trim()}
             data-testid="button-add-staff"
+          >
+            <Plus className="h-4 w-4" />
+            Ajouter
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function AvailabilityEditor({
+  spots,
+  onChange,
+}: {
+  spots: AvailableSpot[];
+  onChange: (spots: AvailableSpot[]) => void;
+}) {
+  const [newCount, setNewCount] = useState(1);
+  const [newDate, setNewDate] = useState("");
+  const [newNote, setNewNote] = useState("");
+
+  const addSpot = () => {
+    if (!newDate) return;
+    onChange([
+      ...spots,
+      { count: newCount, availableFrom: newDate, note: newNote.trim() || undefined },
+    ]);
+    setNewCount(1);
+    setNewDate("");
+    setNewNote("");
+  };
+
+  const removeSpot = (index: number) => {
+    onChange(spots.filter((_, i) => i !== index));
+  };
+
+  const formatDate = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const isUpcoming = (dateStr: string) => {
+    return new Date(dateStr) >= new Date(new Date().toDateString());
+  };
+
+  return (
+    <div className="space-y-4">
+      {spots.length > 0 && (
+        <div className="space-y-2">
+          {spots.map((spot, i) => (
+            <Card key={i}>
+              <CardContent className="p-3 flex items-center gap-3">
+                <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 flex-shrink-0">
+                  <span className="text-sm font-bold text-primary">{spot.count}</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm">
+                    {spot.count} place{spot.count > 1 ? "s" : ""} disponible{spot.count > 1 ? "s" : ""}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {isUpcoming(spot.availableFrom) ? "À partir du" : "Depuis le"} {formatDate(spot.availableFrom)}
+                  </p>
+                  {spot.note && (
+                    <p className="text-xs text-muted-foreground mt-0.5">{spot.note}</p>
+                  )}
+                </div>
+                <Badge variant={isUpcoming(spot.availableFrom) ? "secondary" : "default"}>
+                  {isUpcoming(spot.availableFrom) ? "À venir" : "Disponible"}
+                </Badge>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => removeSpot(i)}
+                  data-testid={`button-remove-spot-${i}`}
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {spots.length === 0 && (
+        <div className="text-center py-6 text-muted-foreground text-sm">
+          Aucune disponibilité renseignée
+        </div>
+      )}
+
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <p className="font-medium text-sm flex items-center gap-2">
+            <CalendarPlus className="h-4 w-4" />
+            Ajouter une disponibilité
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Nombre de places</label>
+              <Input
+                type="number"
+                min={1}
+                max={10}
+                value={newCount}
+                onChange={(e) => setNewCount(parseInt(e.target.value) || 1)}
+                data-testid="input-new-spot-count"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Disponible à partir du</label>
+              <Input
+                type="date"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                data-testid="input-new-spot-date"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Note (optionnel)</label>
+            <Input
+              placeholder="Ex: Place pour un enfant de 6 mois à 3 ans"
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
+              data-testid="input-new-spot-note"
+            />
+          </div>
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={addSpot}
+            disabled={!newDate}
+            data-testid="button-add-spot"
           >
             <Plus className="h-4 w-4" />
             Ajouter
@@ -481,6 +620,7 @@ export default function Dashboard() {
 
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
+  const [availableSpots, setAvailableSpots] = useState<AvailableSpot[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
   const [newPassword, setNewPassword] = useState("");
   const [customService, setCustomService] = useState("");
@@ -523,6 +663,9 @@ export default function Dashboard() {
       setStaffMembers(
         Array.isArray(mam.staffMembers) ? (mam.staffMembers as StaffMember[]) : []
       );
+      setAvailableSpots(
+        Array.isArray((mam as any).availableSpots) ? ((mam as any).availableSpots as AvailableSpot[]) : []
+      );
       setPhotos(mam.photos || []);
     }
   }, [mam, form]);
@@ -533,6 +676,7 @@ export default function Dashboard() {
         ...data,
         services: selectedServices,
         staffMembers,
+        availableSpots,
         photos,
       };
       if (newPassword) {
@@ -698,6 +842,10 @@ export default function Dashboard() {
             <TabsTrigger value="team" className="gap-2" data-testid="tab-team">
               <Users className="h-4 w-4" />
               Équipe
+            </TabsTrigger>
+            <TabsTrigger value="availability" className="gap-2" data-testid="tab-availability">
+              <Calendar className="h-4 w-4" />
+              Disponibilités
             </TabsTrigger>
             <TabsTrigger value="photos" className="gap-2" data-testid="tab-photos">
               <Image className="h-4 w-4" />
@@ -984,6 +1132,18 @@ export default function Dashboard() {
                   <CardContent className="p-6">
                     <h2 className="text-lg font-semibold mb-4">Gérer l'équipe</h2>
                     <StaffEditor staff={staffMembers} onChange={setStaffMembers} />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="availability">
+                <Card>
+                  <CardContent className="p-6">
+                    <h2 className="text-lg font-semibold mb-4">Gérer les disponibilités</h2>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Indiquez les places disponibles avec la date à partir de laquelle elles sont libres. Les parents pourront voir ces informations sur votre profil.
+                    </p>
+                    <AvailabilityEditor spots={availableSpots} onChange={setAvailableSpots} />
                   </CardContent>
                 </Card>
               </TabsContent>
