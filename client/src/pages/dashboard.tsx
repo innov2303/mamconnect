@@ -16,11 +16,12 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   Eye, Save, X, Plus, Trash2, UserPlus, Image, Settings, Users, Lock, Check,
-  MessageSquare, Send, AlertCircle, Clock, Upload
+  MessageSquare, Send, AlertCircle, Clock, Upload, Camera
 } from "lucide-react";
 import type { Mam, StaffMember, Ticket } from "@shared/schema";
 import { z } from "zod";
@@ -49,6 +50,69 @@ const editMamSchema = z.object({
 
 type EditFormValues = z.infer<typeof editMamSchema>;
 
+function StaffPhotoUpload({ photo, name, onPhotoChange }: { photo?: string; name: string; onPhotoChange: (url: string | undefined) => void }) {
+  const [uploading, setUploading] = useState(false);
+  const { toast } = useToast();
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  const handleUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("photo", files[0]);
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Erreur lors de l'upload");
+      }
+      const data = await res.json();
+      onPhotoChange(data.url);
+    } catch (error: any) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    }
+    setUploading(false);
+  };
+
+  return (
+    <div className="relative flex-shrink-0">
+      <Avatar className="h-14 w-14">
+        <AvatarImage src={photo} alt={name} />
+        <AvatarFallback className="bg-primary/10 text-primary text-sm">{initials || "?"}</AvatarFallback>
+      </Avatar>
+      <label className="absolute -bottom-1 -right-1 flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground cursor-pointer hover:bg-primary/90 transition-colors" data-testid="label-staff-photo-upload">
+        {uploading ? (
+          <span className="h-3 w-3 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <Camera className="h-3 w-3" />
+        )}
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(e) => handleUpload(e.target.files)}
+          disabled={uploading}
+          data-testid="input-staff-photo"
+        />
+      </label>
+      {photo && (
+        <button
+          onClick={() => onPhotoChange(undefined)}
+          className="absolute -top-1 -left-1 flex items-center justify-center h-5 w-5 rounded-full bg-destructive text-destructive-foreground"
+          data-testid="button-remove-staff-photo"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 function StaffEditor({
   staff,
   onChange,
@@ -75,12 +139,23 @@ function StaffEditor({
     onChange(staff.filter((_, i) => i !== index));
   };
 
+  const updateMemberPhoto = (index: number, photo: string | undefined) => {
+    const updated = [...staff];
+    updated[index] = { ...updated[index], photo };
+    onChange(updated);
+  };
+
   return (
     <div className="space-y-4">
       {staff.map((member, i) => (
         <Card key={i}>
-          <CardContent className="p-3 flex items-center justify-between gap-3">
-            <div className="min-w-0">
+          <CardContent className="p-3 flex items-center gap-3">
+            <StaffPhotoUpload
+              photo={member.photo}
+              name={member.name}
+              onPhotoChange={(url) => updateMemberPhoto(i, url)}
+            />
+            <div className="min-w-0 flex-1">
               <p className="font-medium text-sm">{member.name}</p>
               <p className="text-xs text-muted-foreground">{member.role}</p>
               {member.description && (
