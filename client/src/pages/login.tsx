@@ -494,19 +494,17 @@ export default function Login() {
                               <Input
                                 type={showMamPassword ? "text" : "password"}
                                 placeholder="Votre mot de passe"
+                                className="pr-10"
                                 {...field}
                                 data-testid="input-mam-password"
                               />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                              <span
+                                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground"
                                 onClick={() => setShowMamPassword(!showMamPassword)}
                                 data-testid="button-toggle-mam-password"
                               >
                                 {showMamPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                              </Button>
+                              </span>
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -568,19 +566,17 @@ export default function Login() {
                               <Input
                                 type={showParentPassword ? "text" : "password"}
                                 placeholder="Votre mot de passe"
+                                className="pr-10"
                                 {...field}
                                 data-testid="input-parent-password"
                               />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                              <span
+                                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground"
                                 onClick={() => setShowParentPassword(!showParentPassword)}
                                 data-testid="button-toggle-parent-password"
                               >
                                 {showParentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                              </Button>
+                              </span>
                             </div>
                           </FormControl>
                           <FormMessage />
