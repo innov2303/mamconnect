@@ -156,7 +156,6 @@ export function Footer() {
           <div>
             <h3 className="font-semibold text-sm mb-3">Contact</h3>
             <div className="flex flex-col gap-1.5">
-              <p className="text-sm text-muted-foreground">contact@mamconnect.fr</p>
               <ContactDialog />
             </div>
           </div>
