@@ -207,74 +207,12 @@ function InscriptionSection() {
   );
 }
 
-function CTASection() {
-  return (
-    <section className="py-16 bg-background">
-      <div className="mx-auto max-w-7xl px-4">
-        <Card className="bg-primary text-primary-foreground overflow-hidden">
-          <CardContent className="p-8 md:p-12">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-              <div>
-                <h2 className="text-2xl md:text-3xl font-bold mb-3">
-                  Vous gérez une MAM ?
-                </h2>
-                <p className="text-primary-foreground/85 mb-6">
-                  Inscrivez votre Maison d'Assistantes Maternelles gratuitement
-                  et gagnez en visibilité auprès des parents de votre secteur.
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  <Link href="/inscription">
-                    <Button variant="secondary" className="gap-2" data-testid="button-cta-register">
-                      Inscrire ma MAM
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                  <Link href="/annuaire">
-                    <Button
-                      variant="outline"
-                      className="bg-transparent border-primary-foreground/30 text-primary-foreground backdrop-blur-sm"
-                      data-testid="button-cta-directory"
-                    >
-                      Voir l'annuaire
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-              <div className="hidden md:flex items-center justify-center">
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div className="p-4">
-                    <MapPin className="h-8 w-8 mx-auto mb-2 text-primary-foreground/80" />
-                    <p className="text-sm text-primary-foreground/80">Recherche locale</p>
-                  </div>
-                  <div className="p-4">
-                    <Users className="h-8 w-8 mx-auto mb-2 text-primary-foreground/80" />
-                    <p className="text-sm text-primary-foreground/80">Équipe détaillée</p>
-                  </div>
-                  <div className="p-4">
-                    <Clock className="h-8 w-8 mx-auto mb-2 text-primary-foreground/80" />
-                    <p className="text-sm text-primary-foreground/80">Horaires clairs</p>
-                  </div>
-                  <div className="p-4">
-                    <Shield className="h-8 w-8 mx-auto mb-2 text-primary-foreground/80" />
-                    <p className="text-sm text-primary-foreground/80">Profil vérifié</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </section>
-  );
-}
-
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <HeroSection />
       <FeaturesSection />
       <InscriptionSection />
-      <CTASection />
     </div>
   );
 }
