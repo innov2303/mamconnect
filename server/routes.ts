@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { registerMamSchema, loginMamSchema, loginAdminSchema, createTicketSchema, registerParentSchema, loginParentSchema } from "@shared/schema";
+import { registerMamSchema, loginMamSchema, loginAdminSchema, createTicketSchema, registerParentSchema, loginParentSchema, mams, parents } from "@shared/schema";
 import { fromError } from "zod-validation-error";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
@@ -10,6 +10,8 @@ import path from "path";
 import fs from "fs";
 import sharp from "sharp";
 import { geocodeAddress, haversineDistance } from "./geocoding";
+import { db } from "./db";
+import { sql } from "drizzle-orm";
 
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -565,6 +567,51 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Delete MAM error:", error);
       res.status(500).json({ message: "Erreur lors de la suppression" });
+    }
+  });
+
+  app.get("/api/admin/stats", adminAuth, async (_req, res) => {
+    try {
+      const mamStats = await db.execute(sql`
+        SELECT 
+          TO_CHAR(created_at, 'YYYY-MM') AS month,
+          COUNT(*)::int AS count
+        FROM mams
+        GROUP BY TO_CHAR(created_at, 'YYYY-MM')
+        ORDER BY month ASC
+      `);
+
+      const parentStats = await db.execute(sql`
+        SELECT 
+          TO_CHAR(created_at, 'YYYY-MM') AS month,
+          COUNT(*)::int AS count
+        FROM parents
+        GROUP BY TO_CHAR(created_at, 'YYYY-MM')
+        ORDER BY month ASC
+      `);
+
+      const mamCumulative: { month: string; count: number; cumulative: number }[] = [];
+      let mamTotal = 0;
+      for (const row of mamStats.rows as any[]) {
+        mamTotal += row.count;
+        mamCumulative.push({ month: row.month, count: row.count, cumulative: mamTotal });
+      }
+
+      const parentCumulative: { month: string; count: number; cumulative: number }[] = [];
+      let parentTotal = 0;
+      for (const row of parentStats.rows as any[]) {
+        parentTotal += row.count;
+        parentCumulative.push({ month: row.month, count: row.count, cumulative: parentTotal });
+      }
+
+      res.json({
+        mams: mamCumulative,
+        parents: parentCumulative,
+        totals: { mams: mamTotal, parents: parentTotal },
+      });
+    } catch (error) {
+      console.error("Stats error:", error);
+      res.status(500).json({ message: "Erreur lors de la récupération des statistiques" });
     }
   });
 

@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,10 +19,14 @@ import { queryClient } from "@/lib/queryClient";
 import {
   Shield, Users, Ticket, CheckCircle, XCircle, Clock,
   Trash2, Eye, Search, LogOut, MessageSquare, Send,
-  AlertCircle, ChevronDown, Building2
+  AlertCircle, ChevronDown, Building2, BarChart3, TrendingUp, UserPlus
 } from "lucide-react";
 import type { Mam, Ticket as TicketType } from "@shared/schema";
 import { SEO } from "@/components/seo";
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Area, AreaChart
+} from "recharts";
 
 function getAdminToken() {
   return localStorage.getItem("adminToken") || "";
@@ -709,6 +713,198 @@ function TicketManagement() {
   );
 }
 
+const MONTH_LABELS: Record<string, string> = {
+  "01": "Jan", "02": "Fév", "03": "Mar", "04": "Avr",
+  "05": "Mai", "06": "Juin", "07": "Juil", "08": "Août",
+  "09": "Sep", "10": "Oct", "11": "Nov", "12": "Déc",
+};
+
+function formatMonth(ym: string) {
+  const [year, month] = ym.split("-");
+  return `${MONTH_LABELS[month] || month} ${year}`;
+}
+
+interface StatPoint {
+  month: string;
+  count: number;
+  cumulative: number;
+}
+
+interface StatsData {
+  mams: StatPoint[];
+  parents: StatPoint[];
+  totals: { mams: number; parents: number };
+}
+
+function StatisticsPanel() {
+  const { data: stats, isLoading } = useQuery<StatsData>({
+    queryKey: ["/api/admin/stats"],
+    queryFn: () => adminFetch("/api/admin/stats"),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+        <Skeleton className="h-72 w-full" />
+        <Skeleton className="h-72 w-full" />
+      </div>
+    );
+  }
+
+  if (!stats) return null;
+
+  const mamChartData = stats.mams.map((d) => ({
+    name: formatMonth(d.month),
+    "Nouvelles inscriptions": d.count,
+    "Total cumulé": d.cumulative,
+  }));
+
+  const parentChartData = stats.parents.map((d) => ({
+    name: formatMonth(d.month),
+    "Nouvelles inscriptions": d.count,
+    "Total cumulé": d.cumulative,
+  }));
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-md bg-primary/10">
+              <Building2 className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <p className="text-3xl font-bold" data-testid="text-stats-total-mams">{stats.totals.mams}</p>
+              <p className="text-sm text-muted-foreground">MAM inscrites au total</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-md bg-primary/10">
+              <UserPlus className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <p className="text-3xl font-bold" data-testid="text-stats-total-parents">{stats.totals.parents}</p>
+              <p className="text-sm text-muted-foreground">Parents inscrits au total</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            Évolution des inscriptions MAM
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-0">
+          {mamChartData.length === 0 ? (
+            <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
+              Aucune donnée disponible
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={mamChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="mamGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} className="text-muted-foreground" />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} className="text-muted-foreground" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "var(--radius)",
+                    fontSize: 13,
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="Total cumulé"
+                  stroke="hsl(var(--primary))"
+                  fill="url(#mamGradient)"
+                  strokeWidth={2}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="Nouvelles inscriptions"
+                  stroke="hsl(var(--muted-foreground))"
+                  strokeWidth={1.5}
+                  strokeDasharray="4 4"
+                  dot={{ r: 3 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            Évolution des inscriptions parents
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-0">
+          {parentChartData.length === 0 ? (
+            <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
+              Aucune donnée disponible
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={parentChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="parentGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(340, 82%, 52%)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(340, 82%, 52%)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} className="text-muted-foreground" />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} className="text-muted-foreground" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "var(--radius)",
+                    fontSize: 13,
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="Total cumulé"
+                  stroke="hsl(340, 82%, 52%)"
+                  fill="url(#parentGradient)"
+                  strokeWidth={2}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="Nouvelles inscriptions"
+                  stroke="hsl(var(--muted-foreground))"
+                  strokeWidth={1.5}
+                  strokeDasharray="4 4"
+                  dot={{ r: 3 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -789,6 +985,10 @@ export default function AdminDashboard() {
               <Ticket className="h-4 w-4" />
               Tickets
             </TabsTrigger>
+            <TabsTrigger value="stats" className="gap-2" data-testid="tab-admin-stats">
+              <BarChart3 className="h-4 w-4" />
+              Statistiques
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="mams">
@@ -797,6 +997,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="tickets">
             <TicketManagement />
+          </TabsContent>
+
+          <TabsContent value="stats">
+            <StatisticsPanel />
           </TabsContent>
         </Tabs>
       </div>
